@@ -1,0 +1,12 @@
+# robots.txt for Planning Poker
+
+User-agent: *
+Allow: /
+Allow: /about
+Disallow: /session/
+
+# Sitemap
+Sitemap: https://planningpoker.bytecoder.nl/sitemap.xml
+
+# Crawl-delay (optional, helps prevent server overload)
+Crawl-delay: 1

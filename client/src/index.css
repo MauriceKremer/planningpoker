@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ~90% global scale: every rem-based Tailwind utility (font sizes, spacing,
+   gaps, radii) shrinks ~10%, giving the whole UI a sleeker, denser feel by
+   adjusting a single value. */
+html {
+  font-size: 90%; /* 14.4px */
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #3e2723; /* deep mocha — warm, readable text over the autumn pattern */
+  line-height: 1.6;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+@layer components {
+  /* ---------- Cards & containers ----------
+     Near-solid warm ivory so the autumn pattern stays visible around the
+     panels but no longer competes with the text on them. */
+  .card {
+    @apply bg-cream-25/95 backdrop-blur-md border border-cream-300 rounded-xl shadow-card;
+  }
+  .card-lg {
+    @apply bg-cream-25/95 backdrop-blur-md border border-cream-300 rounded-xl shadow-card-lg;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 font-semibold rounded-lg
+      transition-colors duration-150 select-none
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-ember-400 focus-visible:ring-offset-1
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  /* Primary: burnt orange gradient */
+  .btn-primary {
+    @apply text-white bg-gradient-to-b from-ember-500 to-ember-600
+      hover:from-ember-600 hover:to-ember-700 active:from-ember-700 active:to-ember-800
+      shadow-button;
+  }
+  /* Secondary: soft caramel/tan surface with deep brown text */
+  .btn-secondary {
+    @apply text-mocha-700 bg-caramel-100 border border-caramel-200
+      hover:bg-caramel-200 hover:border-caramel-300 active:bg-caramel-300;
+  }
+  /* Destructive: warm muted rose */
+  .btn-danger {
+    @apply text-white bg-gradient-to-b from-clay-500 to-clay-600
+      hover:from-clay-600 hover:to-clay-700 active:from-clay-700 active:to-clay-800
+      shadow-button;
+  }
+  /* Quiet: translucent cream surface for low-emphasis controls */
+  .btn-quiet {
+    @apply text-mocha-700 bg-white/60 border border-cream-300
+      hover:bg-cream-100 hover:border-cream-400 active:bg-cream-200;
+  }
+
+  /* ---------- Inputs ---------- */
+  .input-field {
+    @apply w-full bg-white/80 border border-cream-300 rounded-lg
+      px-3 py-2 text-mocha-800 placeholder-cream-500
+      focus:outline-none focus:ring-2 focus:ring-ember-400/60 focus:border-ember-400
+      transition-shadow;
+  }
+
+  /* ---------- Badges & status indicators ---------- */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium leading-tight;
+  }
+  .badge-ember {
+    @apply badge bg-ember-100 text-ember-800;
+  }
+  .badge-sage {
+    @apply badge bg-sage-100 text-sage-700;
+  }
+  .badge-honey {
+    @apply badge bg-honey-100 text-honey-800;
+  }
+  .badge-clay {
+    @apply badge bg-clay-100 text-clay-700;
+  }
+  .badge-quiet {
+    @apply badge bg-cream-100 text-mocha-500;
+  }
+
+  /* ---------- Panels (inline banners inside cards) ---------- */
+  .panel {
+    @apply rounded-xl border p-3.5;
+  }
+  .panel-ember {
+    @apply panel bg-ember-50/80 border-ember-200;
+  }
+  .panel-sage {
+    @apply panel bg-sage-50/80 border-sage-200;
+  }
+  .panel-honey {
+    @apply panel bg-honey-50/80 border-honey-200;
+  }
+  .panel-clay {
+    @apply panel bg-clay-50/90 border-clay-200;
+  }
+}
