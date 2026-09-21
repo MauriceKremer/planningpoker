@@ -6,6 +6,7 @@ import Session from './pages/Session';
 import JoinSession from './pages/JoinSession';
 import About from './pages/About';
 import SessionClosedPage from './pages/SessionClosedPage';
+import GitHubLinks from './components/GitHubLinks';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
               Planning Poker
             </Link>
             <div className="flex items-center space-x-4">
+              <GitHubLinks />
               <Link
                 to="/about"
                 className="text-cream-100 hover:text-ember-300 text-sm font-medium transition-colors"
