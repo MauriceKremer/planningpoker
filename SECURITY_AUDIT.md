@@ -11,21 +11,19 @@ The application intentionally stores **no personal data, no accounts, and no per
 
 Since the previous assessment the vote-privacy model was tightened (vote **values** are no longer broadcast while a round is open — only *who has voted*), nginx now logs access without IP addresses, the reverse-proxy trust configuration was tightened to private CIDR ranges, and moderator hand-over on disconnect gained a revalidated grace window. All 138 server tests and 34 client tests pass.
 
-During this assessment cycle three findings were raised (F1–F3, all Low/Info); F2 (client IP in the app-layer error log) was resolved immediately — the claim/log mismatch is closed, and PRIVACY.md's no-IP-logging promise now holds at every layer. F1 and F3 remain open with fixes identified.
+During this assessment cycle three findings were raised (F1–F3, all Low/Info); F2 (client IP in the app-layer error log) was resolved immediately — the claim/log mismatch is closed, and PRIVACY.md's no-IP-logging promise now holds at every layer. F1 and F3 remain open with fixes identified. All non-breaking dependency fixes were then applied (server 10 → 1, client 43 → 30, zero critical; both test suites and both builds verified green).
 
 ## Dependency audit status
 
 ### Server
-- **10 vulnerabilities (5 moderate, 5 high)** reported by `npm audit`.
-- **Runtime-relevant:**
-  - `socket.io-parser` 4.0.0–4.2.6 (**high**) — zero-attachment memory exhaustion. Non-breaking fix available (`npm audit fix`). This is the most important one to apply.
-  - `qs` / `body-parser` (moderate, DoS). The app sets a *valid* `express.json({ limit: '10kb' })`, so the "invalid limit disables size enforcement" path does not apply, but a patch is available non-breaking.
-  - `uuid` < 11.1.1 (moderate, buffer bounds check in v3/v5/v6 **when a `buf` argument is provided**). This app calls `uuidv4()` with no buffer, so it is **not exploitable as used**. The patched version (uuid@14) is a breaking major; defer to a planned upgrade.
-- **Dev/build-only (not shipped):** `brace-expansion`, `browserslist`, `ip-address`, `js-yaml`, `baseline-browser-mapping` (test/lint tooling).
+- **1 moderate vulnerability** remains after applying all non-breaking `npm audit fix` updates (down from 10: 5 moderate, 5 high at assessment time).
+- **Remaining:** `uuid` < 11.1.1 (moderate, buffer bounds check in v3/v5/v6 **when a `buf` argument is provided**). This app calls `uuidv4()` with no buffer, so it is **not exploitable as used**. The patched version (uuid@14) is a breaking major; deferred to a planned upgrade.
+- **Resolved by `npm audit fix`:** `socket.io-parser` zero-attachment memory exhaustion (high), `qs`/`body-parser` DoS (moderate), and the dev-only `brace-expansion`, `browserslist`, `ip-address`, `js-yaml`, `baseline-browser-mapping` findings. All 138 server tests pass with the updated lockfile.
 
 ### Client
-- **43 vulnerabilities (1 critical, 20 high, 12 moderate, 10 low)** — essentially all in the `react-scripts@5.0.1` build-time toolchain (webpack-dev-server, `websocket-driver` [the critical one], workbox, postcss, svgo, eslint, jest trees).
-- These affect the **dev server and build pipeline only**, not the static bundle served to browsers. `react-scripts` is pinned at 5.0.1; forcing upgrades would break the build. Same accepted-risk class as the previous assessment.
+- **30 vulnerabilities (14 high, 7 moderate, 9 low)** after non-breaking `npm audit fix` (down from 43 incl. 1 critical at assessment time; the critical `websocket-driver` finding is resolved).
+- Essentially all remaining findings live in the `react-scripts@5.0.1` build-time toolchain (webpack-dev-server, workbox, postcss, svgo, eslint, jest trees).
+- These affect the **dev server and build pipeline only**, not the static bundle served to browsers. `react-scripts` is pinned at 5.0.1; forcing upgrades would break the build. Same accepted-risk class as the previous assessment. Build and 34 client tests pass with the updated lockfile.
 
 ## Active security controls
 
@@ -72,8 +70,8 @@ None of the findings change the overall risk rating. F2 was resolved as part of 
 |---|---|---|
 | Session IDs are only 8 hex characters (32 bits) | Low | Impersonation additionally requires a valid 128-bit user UUID; data is ephemeral and non-sensitive; brute-forcing is impractical. |
 | No user authentication | Low | By design. Names are self-chosen display names, not identities. |
-| Build-tool dependency vulnerabilities (client) | Low | Dev/build pipeline only; not part of the served bundle. |
-| `socket.io-parser` memory-exhaustion advisory (server, high) | Medium (until patched) | Fix is non-breaking and should be applied (`npm audit fix`); nginx `limit_conn`/`limit_req` mitigate at the edge in the meantime. |
+| Build-tool dependency vulnerabilities (client) | Low | 30 findings, dev/build pipeline only; not part of the served bundle. |
+| `uuid` buffer-bounds advisory (server, moderate) | Low | Not exploitable as the app uses it (no `buf` argument); fix requires a breaking major upgrade. |
 | CSP is disabled in Helmet | Low | Enabling a strict CSP in nginx would require tuning for inline scripts; X-Frame-Options / X-Content-Type-Options provide baseline protection. |
 | Sessions lost on redeploy | Low | By design; a planning poker tool does not need durability. |
 | Any participant can reset votes mid-round | Low | Intentional (documented in the user manual); no data disclosure involved. |
@@ -81,12 +79,11 @@ None of the findings change the overall risk rating. F2 was resolved as part of 
 
 ## Recommended future hardening
 
-1. **Apply non-breaking server dependency fixes** (`npm audit fix`): addresses `socket.io-parser` (high), `qs`/`body-parser` (moderate). Re-run tests afterwards.
-2. Add the missing `checkRateLimit(socket.id, 'test-sound')` for consistency (F1).
-3. Add per-item validation caps to `update-card-set` (F3).
-4. Add a strict `Content-Security-Policy` in nginx once inline script needs are audited.
-5. Remove `allowEIO3: true` from Socket.IO if all clients are modern (carried over — still present).
-6. Re-run `npm audit` periodically; watch for a non-breaking path for `uuid`.
+1. Add the missing `checkRateLimit(socket.id, 'test-sound')` for consistency (F1).
+2. Add per-item validation caps to `update-card-set` (F3).
+3. Add a strict `Content-Security-Policy` in nginx once inline script needs are audited.
+4. Remove `allowEIO3: true` from Socket.IO if all clients are modern (carried over — still present).
+5. Re-run `npm audit` periodically; watch for a non-breaking path for `uuid`.
 
 ## Conclusion
 
