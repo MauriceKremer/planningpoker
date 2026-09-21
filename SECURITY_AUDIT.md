@@ -11,6 +11,8 @@ The application intentionally stores **no personal data, no accounts, and no per
 
 Since the previous assessment the vote-privacy model was tightened (vote **values** are no longer broadcast while a round is open — only *who has voted*), nginx now logs access without IP addresses, the reverse-proxy trust configuration was tightened to private CIDR ranges, and moderator hand-over on disconnect gained a revalidated grace window. All 138 server tests and 34 client tests pass.
 
+During this assessment cycle three findings were raised (F1–F3, all Low/Info); F2 (client IP in the app-layer error log) was resolved immediately — the claim/log mismatch is closed, and PRIVACY.md's no-IP-logging promise now holds at every layer. F1 and F3 remain open with fixes identified.
+
 ## Dependency audit status
 
 ### Server
@@ -88,4 +90,4 @@ None of the findings change the overall risk rating. F2 was resolved as part of 
 
 ## Conclusion
 
-For a short-lived, ephemeral collaboration tool with no PII, no accounts, and no persistence, the security posture remains **good** — and has improved since the last assessment: vote values are now redacted from all room broadcasts while a round is open, nginx no longer logs client IPs, the proxy-trust configuration was tightened, and containers run least-privilege. The architecture itself (no database, no accounts, in-memory only) is still the strongest security feature. The three new findings are all Low/Info and cheap to fix; none blocks publication.
+For a short-lived, ephemeral collaboration tool with no PII, no accounts, and no persistence, the security posture remains **good** — and has improved since the last assessment: vote values are now redacted from all room broadcasts while a round is open, nginx no longer logs client IPs, the proxy-trust configuration was tightened, and containers run least-privilege. The architecture itself (no database, no accounts, in-memory only) is still the strongest security feature. Of the three new findings, F2 was resolved during the assessment; the remaining two (F1, F3) are Low and cheap to fix; none blocks publication.
