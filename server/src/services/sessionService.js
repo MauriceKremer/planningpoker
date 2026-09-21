@@ -25,6 +25,36 @@ const { publicVoteOutView, computeVoteOutRequired } = require('../socket/voteOut
 
 const DEFAULT_CARD_SET = ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89'];
 
+// Card-set bounds (audit finding F3): the card set is stored on the session
+// and broadcast to every participant, so both the item count and per-item
+// length must be bounded — previously they were limited only by the 10 KB
+// message cap. Limits are generous: the largest predefined set has 11 cards.
+const MAX_CARD_SET_ITEMS = 24;
+const MAX_CARD_VALUE_LENGTH = 16;
+
+/**
+ * Validate + normalize a moderator-supplied card set.
+ * Throws with a user-facing message on invalid input; returns a new array
+ * of trimmed strings (untrimmed/unvalidated input is never stored).
+ * Shared by the REST create route and the update-card-set socket event.
+ */
+const sanitizeCardSet = (cardSet) => {
+  if (!Array.isArray(cardSet) || cardSet.length === 0) {
+    throw new Error('Invalid card set provided');
+  }
+  if (cardSet.length > MAX_CARD_SET_ITEMS) {
+    throw new Error(`Card set is too large (max ${MAX_CARD_SET_ITEMS} cards)`);
+  }
+  return cardSet.map((value) => {
+    if (typeof value !== 'string') throw new Error('Card values must be text');
+    const trimmed = value.trim();
+    if (trimmed.length === 0 || trimmed.length > MAX_CARD_VALUE_LENGTH) {
+      throw new Error(`Card values must be 1-${MAX_CARD_VALUE_LENGTH} characters`);
+    }
+    return trimmed;
+  });
+};
+
 // sessionId → session object (the single source of truth).
 const store = new Map();
 
@@ -41,7 +71,9 @@ const createSession = (moderatorName, title = null, cardSet = null) => {
 
   const moderatorId = uuidv4();
   const now = new Date().toISOString();
-  const sessionCardSet = (Array.isArray(cardSet) && cardSet.length > 0) ? cardSet : DEFAULT_CARD_SET;
+  const sessionCardSet = (Array.isArray(cardSet) && cardSet.length > 0)
+    ? sanitizeCardSet(cardSet)
+    : DEFAULT_CARD_SET;
 
   const session = {
     id: sessionId,
@@ -169,6 +201,9 @@ module.exports = {
   updateSessionAtomic,
   deleteSession,
   getAllSessions,
+  sanitizeCardSet,
+  MAX_CARD_SET_ITEMS,
+  MAX_CARD_VALUE_LENGTH,
   computeVoteOutRequired,
   // Exposed for tests / introspection only.
   _store: store,

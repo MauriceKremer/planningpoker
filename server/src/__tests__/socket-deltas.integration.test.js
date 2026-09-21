@@ -212,4 +212,25 @@ describe('socket delta payloads (end-to-end)', () => {
     expect(data.previousModeratorName).toBe('Alice');
     expect(data.wasManualTransfer).toBe(true);
   }, 15000);
+
+  test('audit F3: oversized card set is rejected, session state untouched', async () => {
+    // Note: Bob became the moderator in the transfer test above.
+    const errP = waitFor(bob, 'error');
+    const tooMany = Array.from({ length: 25 }, (_, i) => `${i}`);
+    bob.emit('update-card-set', { sessionId, userId: bobId, cardSet: tooMany });
+
+    const err = await errP;
+    expect(err.message).toMatch(/too large/);
+    // The rejected update left the card set (and the session) untouched.
+    expect(sessionService.getSession(sessionId).cardSet).toEqual(['XS', 'S', 'M']);
+  }, 15000);
+
+  test('audit F1: test-sound is rate limited like every other event', async () => {
+    const errP = waitFor(bob, 'error', 10000);
+    for (let i = 0; i < 61; i++) {
+      bob.emit('test-sound', { sessionId, userId: bobId });
+    }
+    const err = await errP;
+    expect(err.message).toMatch(/Too many requests/);
+  }, 20000);
 });

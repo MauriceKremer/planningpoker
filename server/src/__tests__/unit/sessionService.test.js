@@ -41,6 +41,40 @@ describe('in-memory session store', () => {
       expect(session.title).toBe("Bob's Planning Session");
       expect(session.cardSet).toEqual(['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89']);
     });
+
+    test('stores a valid custom card set (trimmed)', () => {
+      const session = sessionService.createSession('Alice', null, [' 1 ', '2']);
+      expect(session.cardSet).toEqual(['1', '2']);
+    });
+  });
+
+  describe('sanitizeCardSet (audit F3)', () => {
+    test('trims and returns card values', () => {
+      expect(sessionService.sanitizeCardSet([' 1 ', 'dog', ' ☕ '])).toEqual(['1', 'dog', '☕']);
+    });
+
+    test('rejects non-arrays and empty arrays', () => {
+      expect(() => sessionService.sanitizeCardSet(null)).toThrow('Invalid card set provided');
+      expect(() => sessionService.sanitizeCardSet([])).toThrow('Invalid card set provided');
+      expect(() => sessionService.sanitizeCardSet('fib')).toThrow('Invalid card set provided');
+    });
+
+    test('rejects oversized sets', () => {
+      const tooMany = Array.from({ length: sessionService.MAX_CARD_SET_ITEMS + 1 }, (_, i) => `${i}`);
+      expect(() => sessionService.sanitizeCardSet(tooMany)).toThrow(/too large/);
+    });
+
+    test('rejects non-string and overlong card values', () => {
+      expect(() => sessionService.sanitizeCardSet([42])).toThrow('Card values must be text');
+      expect(() => sessionService.sanitizeCardSet([''])).toThrow(/1-16 characters/);
+      expect(() => sessionService.sanitizeCardSet(['   '])).toThrow(/1-16 characters/);
+      expect(() => sessionService.sanitizeCardSet(['x'.repeat(17)])).toThrow(/1-16 characters/);
+    });
+
+    test('accepts exactly MAX_CARD_SET_ITEMS items at the boundary', () => {
+      const atLimit = Array.from({ length: sessionService.MAX_CARD_SET_ITEMS }, (_, i) => `${i}`);
+      expect(sessionService.sanitizeCardSet(atLimit)).toHaveLength(sessionService.MAX_CARD_SET_ITEMS);
+    });
   });
 
   describe('getSession', () => {

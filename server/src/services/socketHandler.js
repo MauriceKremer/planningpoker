@@ -1,4 +1,4 @@
-const { getSession, updateSessionAtomic, deleteSession, getAllSessions, sanitizeSession } = require('../services/sessionService');
+const { getSession, updateSessionAtomic, deleteSession, getAllSessions, sanitizeSession, sanitizeCardSet } = require('../services/sessionService');
 const logger = require('../utils/logger');
 const { validateSocketInput, VALIDATION_RULES, SESSION_ID_PATTERN, USER_ID_PATTERN } = require('../socket/validation');
 const { checkRateLimit, cleanupRateLimits } = require('../socket/rateLimiter');
@@ -241,6 +241,9 @@ const setupSocketEvents = (io, options = {}) => {
 
     // === Test sound (read-only, no session mutation) ===
     socket.on('test-sound', async (data) => {
+      // Audit finding F1: this was the only room-broadcasting event without
+      // a rate limit — spam caused audible notifications for everyone.
+      if (!checkRateLimit(socket.id, 'test-sound')) return socket.emit('error', { message: 'Too many requests. Please slow down.' });
       const validation = validateSocketInput(data, {
         sessionId: VALIDATION_RULES.sessionId,
         userId: VALIDATION_RULES.userId,
@@ -271,9 +274,12 @@ const setupSocketEvents = (io, options = {}) => {
       try {
         const session = updateSessionAtomic(sessionId, (session) => {
           if (session.moderatorId !== userId) throw new Error('Only the moderator can update card set');
-          if (!Array.isArray(cardSet) || cardSet.length === 0) throw new Error('Invalid card set provided');
+          // Audit finding F3: bound the card set (count + per-item length)
+          // before storing. sanitizeCardSet validates BEFORE mutation, so a
+          // rejection leaves the session untouched (see updateSessionAtomic).
+          const sanitized = sanitizeCardSet(cardSet);
 
-          session.cardSet = cardSet;
+          session.cardSet = sanitized;
           session.votes = {};
           session.isVotingOpen = false;
           session.votingComplete = false;

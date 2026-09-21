@@ -37,8 +37,14 @@ router.post('/create', [
     .withMessage('Title must not exceed 100 characters'),
   body('cardSet')
     .optional()
-    .isArray()
-    .withMessage('Card set must be an array'),
+    .isArray({ min: 1, max: 24 })
+    .withMessage('Card set must be an array of 1-24 items'),
+  body('cardSet.*')
+    .isString()
+    .withMessage('Card values must be text')
+    .trim()
+    .isLength({ min: 1, max: 16 })
+    .withMessage('Card values must be 1-16 characters'),
   validationMiddleware
 ], async (req, res) => {
   try {
