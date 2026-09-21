@@ -108,11 +108,12 @@ app.get('/api/version', (req, res) => {
 // Routes
 app.use('/api/sessions', sessionRoutes);
 
-// Security: Log suspicious activity and return generic 400/500 responses
+// Security: Log suspicious activity and return generic 400/500 responses.
+// Privacy: logs deliberately omit the client IP (PRIVACY.md — "no IP address
+// logging"); path + error message are enough to triage incidents.
 app.use((err, req, res, next) => {
   if (err) {
     logger.error('Security Event:', {
-      ip: req.ip,
       path: req.path,
       error: err.message,
     });

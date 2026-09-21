@@ -48,7 +48,7 @@ Since the previous assessment the vote-privacy model was tightened (vote **value
 | XSS posture | User input stored verbatim (no server-side escaping/mangling); React escapes all interpolation on render |
 | Request size | `express.json({ limit: '10kb' })` (a valid limit — not affected by the body-parser "invalid limit" advisory) |
 | Nginx rate limiting | `limit_req` (10 r/s api, 30 r/s ws) + `limit_conn` (10) with bursts, on `/api/` and `/socket.io/` |
-| No-IP logging | nginx access logs use a custom `no_ip` format (no `$remote_addr`); limit-rejection logging demoted to warn; PRIVACY.md claim upheld at the proxy layer (see finding F2 for the app layer) |
+| No-IP logging | nginx access logs use a custom `no_ip` format (no `$remote_addr`); limit-rejection logging demoted to warn; the Express error logger also omits the client IP — PRIVACY.md claim upheld at both proxy and app layers |
 | No persistence | No database, no disk writes; sessions expire with the process; heartbeat last-seen in memory only |
 | Least privilege | Server container runs as non-root `nodejs` user; nginx config mounted read-only |
 | Info hygiene | Socket.IO `serveClient: false`; `/health` returns no sensitive data |
@@ -58,11 +58,11 @@ Since the previous assessment the vote-privacy model was tightened (vote **value
 | ID | Finding | Severity | Notes |
 |---|---|---|---|
 | F1 | `test-sound` socket event has **no `checkRateLimit`** call (all other mutating events have one) | Low | Authenticated participants only; spam causes audible notifications for the room. One-line fix. |
-| F2 | Express error middleware logs `req.ip` on error events (`Security Event:` log line) | Low | PRIVACY.md states "no IP address logging". Only error paths are affected and logs live in container stdout, but the claim/log should be aligned — drop the field or document the exception. |
+| F2 | Express error middleware logged `req.ip` on error events | Low | **Resolved** — the IP field was removed from the security-event log; only `path` + error message are logged. PRIVACY.md's "no IP address logging" claim now holds at both proxy and app layer. |
 | F3 | Moderator-supplied `cardSet` array is validated as "non-empty array" but items are unbounded in length/count (bounded only by the 10 KB message limit) | Low | Values are broadcast to the room; recommend per-item length and max-item-count caps. |
 | F4 | `X-XSS-Protection` header is deprecated and a no-op in modern browsers | Info | Harmless; keep or drop, XSS is handled by React escaping. |
 
-None of the findings change the overall risk rating.
+None of the findings change the overall risk rating. F2 was resolved as part of this assessment cycle.
 
 ## Remaining risks (acceptable for this app)
 
@@ -81,11 +81,10 @@ None of the findings change the overall risk rating.
 
 1. **Apply non-breaking server dependency fixes** (`npm audit fix`): addresses `socket.io-parser` (high), `qs`/`body-parser` (moderate). Re-run tests afterwards.
 2. Add the missing `checkRateLimit(socket.id, 'test-sound')` for consistency (F1).
-3. Remove `ip: req.ip` from the security-event error log, or document the exception in PRIVACY.md (F2).
-4. Add per-item validation caps to `update-card-set` (F3).
-5. Add a strict `Content-Security-Policy` in nginx once inline script needs are audited.
-6. Remove `allowEIO3: true` from Socket.IO if all clients are modern (carried over — still present).
-7. Re-run `npm audit` periodically; watch for a non-breaking path for `uuid`.
+3. Add per-item validation caps to `update-card-set` (F3).
+4. Add a strict `Content-Security-Policy` in nginx once inline script needs are audited.
+5. Remove `allowEIO3: true` from Socket.IO if all clients are modern (carried over — still present).
+6. Re-run `npm audit` periodically; watch for a non-breaking path for `uuid`.
 
 ## Conclusion
 
