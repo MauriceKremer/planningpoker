@@ -8,7 +8,7 @@ const SEO = ({
   title = 'Free Online Planning Poker – No Signup, No Ads, No Tracking',
   description = 'Free real-time Planning Poker for Agile teams. Privacy-first: no signup, no ads, no tracking — votes vanish within 24 hours. Fibonacci & T-shirt cards.',
   keywords = 'planning poker, agile estimation, scrum poker, story points, agile tools, planning poker no signup, planning poker no ads, privacy first planning poker',
-  ogImage = 'https://planningpoker.bytecoder.nl/images/og-image.jpg',
+  ogImage = 'https://planningpoker.bytecoder.nl/images/og-image.jpg?v=autumn-2026',
   url = 'https://planningpoker.bytecoder.nl/',
   noindex = false
 }) => {
