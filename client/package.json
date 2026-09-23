@@ -28,7 +28,13 @@
     ]
   },
   "overrides": {
-    "nth-check": "^2.1.1"
+    "nth-check": "^2.1.1",
+    "@svgr/webpack": "^6.5.1",
+    "svgo": "^2.8.4",
+    "postcss": "^8.5.28",
+    "serialize-javascript": "^7.1.1",
+    "underscore": "^1.13.8",
+    "uuid": "^11.1.1"
   },
   "browserslist": {
     "production": [
@@ -44,7 +50,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.31",
+    "postcss": "^8.5.28",
     "tailwindcss": "^3.3.5"
   }
 }
