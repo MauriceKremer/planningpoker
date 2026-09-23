@@ -29,7 +29,7 @@ During this assessment cycle three findings were raised (F1–F3, all Low/Info) 
 
 | Control | Implementation |
 |---|---|
-| Security headers | `helmet` with HSTS in production (CSP disabled — see risks); X-Frame-Options / X-Content-Type-Options / X-XSS-Protection in nginx |
+| Security headers | `helmet` (HSTS in production) **and a strict Content-Security-Policy** in Helmet plus both nginx configs; X-Frame-Options / X-Content-Type-Options / X-XSS-Protection in nginx |
 | API rate limiting | `express-rate-limit` on `/api/`, 100 req / 5 min per IP |
 | Socket rate limiting | Sliding-window per socket/event in `src/socket/rateLimiter.js`, 60 events/min, covering **every** room-broadcasting/mutating event (including `test-sound`) |
 | Reverse-proxy trust | `app.set('trust proxy', 1)`; nginx `set_real_ip_from` restricted to private ranges (10/8, 172.16/12, 192.168/16) |
@@ -72,17 +72,17 @@ None of the findings change the overall risk rating. All three were resolved as 
 | No user authentication | Low | By design. Names are self-chosen display names, not identities. |
 | Build-tool dependency vulnerabilities (client) | Low | 30 findings, dev/build pipeline only; not part of the served bundle. |
 | `uuid` buffer-bounds advisory (server, moderate) | Low | Not exploitable as the app uses it (no `buf` argument); fix requires a breaking major upgrade. |
-| CSP is disabled in Helmet | Low | Enabling a strict CSP in nginx would require tuning for inline scripts; X-Frame-Options / X-Content-Type-Options provide baseline protection. |
+| CSP is disabled in Helmet | Low | **Resolved.** Strict CSP now enforced in Helmet (`server/src/index.js`) and both nginx configs (`nginx/nginx.conf`, `client/nginx.conf`), tuned to the verified build inventory: no executable inline scripts (JSON-LD is CSP-exempt), same-origin API/WebSocket, `style-src 'unsafe-inline'` only for React style attributes. |
 | Sessions lost on redeploy | Low | By design; a planning poker tool does not need durability. |
 | Any participant can reset votes mid-round | Low | Intentional (documented in the user manual); no data disclosure involved. |
 | REST GET of a session by ID reveals participants & results to anyone holding the session ID | Low | Inherent to the share-by-code design; values remain hidden while voting is open. |
 
 ## Recommended future hardening
 
-1. Add a strict `Content-Security-Policy` in nginx once inline script needs are audited.
+1. ~~Add a strict `Content-Security-Policy` in nginx once inline script needs are audited.~~ **Done.** Inline script needs were audited (CRA build emits external bundles only); strict CSP enforced in Helmet and both nginx configs. Keep the three CSP strings in sync. Also remove the now-redundant weak CSP from any manually deployed copies of `client/nginx.conf`.
 2. Remove `allowEIO3: true` from Socket.IO if all clients are modern (carried over — still present).
 3. Re-run `npm audit` periodically; watch for a non-breaking path for `uuid`.
 
 ## Conclusion
 
-For a short-lived, ephemeral collaboration tool with no PII, no accounts, and no persistence, the security posture remains **good** — and has improved since the last assessment: vote values are now redacted from all room broadcasts while a round is open, nginx no longer logs client IPs, the proxy-trust configuration was tightened, containers run least-privilege, and all three assessment findings (plus all non-breaking dependency advisories) were resolved within the cycle. The architecture itself (no database, no accounts, in-memory only) is still the strongest security feature. Nothing remains open except hardening items that require separate tuning (CSP, `allowEIO3`, the breaking `uuid` major).
+For a short-lived, ephemeral collaboration tool with no PII, no accounts, and no persistence, the security posture remains **good** — and has improved since the last assessment: vote values are now redacted from all room broadcasts while a round is open, nginx no longer logs client IPs, the proxy-trust configuration was tightened, containers run least-privilege, and all three assessment findings (plus all non-breaking dependency advisories) were resolved within the cycle. The architecture itself (no database, no accounts, in-memory only) is still the strongest security feature. Nothing remains open except hardening items that require separate tuning (`allowEIO3`, the breaking `uuid` major). The CSP hardening item is resolved: strict CSP is enforced in Helmet and both nginx configs.

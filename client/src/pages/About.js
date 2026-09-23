@@ -350,7 +350,7 @@ const About = () => {
                 <li>Request size limits (10KB maximum)</li>
                 <li>Session ID validation (8-character uppercase alphanumeric format)</li>
                 <li>User ID validation (UUID format)</li>
-                <li>Helmet security headers for production</li>
+                <li>Helmet security headers with a strict Content-Security-Policy for production</li>
                 <li>Trust proxy configuration for SSL termination</li>
                 <li>Protection against cross-session contamination</li>
                 <li>Access logs stored without IP addresses (privacy-safe log format)</li>

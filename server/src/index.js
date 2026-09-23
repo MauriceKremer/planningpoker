@@ -43,9 +43,35 @@ const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [process.env.CLIENT_URL]
   : [process.env.CLIENT_URL || 'http://localhost:3000', 'http://localhost:3001'];
 
-// Security middleware - configured for WebSocket compatibility
+// Security middleware.
+// CSP: strict, API-appropriate policy. WebSockets are unaffected (CSP does not
+// block WS by default; the SPA page's CSP governs its own connect-src, and the
+// prod nginx policy is identical — keep the two CSP strings in sync, see
+// nginx/nginx.conf and client/nginx.conf).
+//   - script-src 'self': the CRA build emits only external bundles (no inline
+//     scripts; JSON-LD in index.html is non-executable and CSP-exempt)
+//   - style-src 'unsafe-inline': React inline style attributes
+//   - media-src data: the base64 round-start sound effect in useSessionSocket.js
+//   - img-src data:: webpack-inlined assets below the inline-size limit
+const CSP_DIRECTIVES = {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'"],
+  styleSrc: ["'self'", "'unsafe-inline'"],
+  imgSrc: ["'self'", "data:"],
+  fontSrc: ["'self'"],
+  mediaSrc: ["'self'", "data:"],
+  connectSrc: ["'self'"],
+  objectSrc: ["'none'"],
+  baseUri: ["'self'"],
+  frameAncestors: ["'self'"],
+  formAction: ["'self'"],
+};
+
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: CSP_DIRECTIVES,
+  },
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: false,
   hsts: process.env.NODE_ENV === 'production' ? {
