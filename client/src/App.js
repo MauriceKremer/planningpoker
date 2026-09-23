@@ -7,20 +7,17 @@ import JoinSession from './pages/JoinSession';
 import About from './pages/About';
 import SessionClosedPage from './pages/SessionClosedPage';
 import GitHubLinks from './components/GitHubLinks';
+import { useActiveTheme } from './theme/themes';
 
 function App() {
+  const { backdropStyle } = useActiveTheme();
+
   return (
     <HelmetProvider>
       <Router>
       <div
         className="min-h-screen"
-        style={{
-          backgroundImage: "url('/images/backdrop_light_autumn.webp')",
-          backgroundSize: '50%',
-          backgroundPosition: 'top left',
-          backgroundAttachment: 'fixed',
-          backgroundRepeat: 'repeat'
-        }}
+        style={backdropStyle}
       >
         <header className="bg-mocha-800/90 backdrop-blur-md text-cream-50 py-3 border-b border-ember-700/40 shadow-card">
           <div className="max-w-7xl mx-auto flex justify-between items-center px-4">

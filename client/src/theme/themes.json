@@ -1,0 +1,54 @@
+[
+  {
+    "id": "christmas",
+    "label": "Christmas",
+    "backdrop": "/images/backdrop_light_christmas.webp",
+    "start": "11-24",
+    "end": "01-06",
+    "ogImageVersion": "christmas-2026",
+    "themeColor": "#2B1A16"
+  },
+  {
+    "id": "autumn",
+    "label": "Autumn",
+    "backdrop": "/images/backdrop_light_autumn.webp",
+    "start": "09-01",
+    "end": "11-23",
+    "ogImageVersion": "autumn-2026",
+    "themeColor": "#3E2723"
+  },
+  {
+    "id": "summer",
+    "label": "Summer",
+    "backdrop": "/images/backdrop_light_summer.jpeg",
+    "start": "05-01",
+    "end": "08-31",
+    "ogImageVersion": "summer-2026",
+    "themeColor": "#1E40AF"
+  },
+  {
+    "id": "easter",
+    "label": "Easter",
+    "backdrop": "/images/backdrop_light_easter.webp",
+    "start": "03-15",
+    "end": "04-06",
+    "ogImageVersion": "easter-2026",
+    "themeColor": "#4E342E"
+  },
+  {
+    "id": "spring",
+    "label": "Spring",
+    "backdrop": "/images/backdrop_light_spring.jpeg",
+    "start": "03-15",
+    "end": "04-30",
+    "ogImageVersion": "spring-2026",
+    "themeColor": "#3E5F2B"
+  },
+  {
+    "id": "default",
+    "label": "Classic",
+    "backdrop": "/images/backdrop_light.png",
+    "ogImageVersion": "classic-2026",
+    "themeColor": "#1E293B"
+  }
+]
