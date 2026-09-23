@@ -1,5 +1,43 @@
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useActiveTheme } from '../theme/themes';
+
+/**
+ * public/index.html ships a static set of SEO meta tags as a fallback for
+ * crawlers and link-unfurlers that don't execute JavaScript (WhatsApp, Slack,
+ * Discord, iMessage preview bots). react-helmet-async only manages the tags it
+ * renders itself (marked with data-rh="true"), so those static fallbacks are
+ * never removed on its own. Once React has mounted we must delete them, or the
+ * DOM ends up with two of every SEO tag (e.g. two meta descriptions), which
+ * search engines like Bing flag as an error.
+ */
+const STATIC_DUPLICATE_SELECTORS = [
+  'meta[name="description"]:not([data-rh])',
+  'meta[name="title"]:not([data-rh])',
+  'meta[name="keywords"]:not([data-rh])',
+  'meta[name="robots"]:not([data-rh])',
+  'link[rel="canonical"]:not([data-rh])',
+  'meta[property="og:url"]:not([data-rh])',
+  'meta[property="og:title"]:not([data-rh])',
+  'meta[property="og:description"]:not([data-rh])',
+  'meta[property="og:image"]:not([data-rh])',
+  'meta[property="og:image:width"]:not([data-rh])',
+  'meta[property="og:image:height"]:not([data-rh])',
+  'meta[property="og:image:alt"]:not([data-rh])',
+  'meta[property^="twitter:"]:not([data-rh])',
+];
+
+// Static fallbacks only exist once in the initial HTML, so a single cleanup per
+// page load is enough (module-level flag, not per-component state).
+let staticFallbacksRemoved = false;
+
+const removeStaticFallbacks = () => {
+  if (staticFallbacksRemoved) return;
+  staticFallbacksRemoved = true;
+  STATIC_DUPLICATE_SELECTORS.forEach((selector) => {
+    document.head.querySelectorAll(selector).forEach((el) => el.remove());
+  });
+};
 
 /**
  * SEO component for managing page-specific meta tags
@@ -17,6 +55,10 @@ const SEO = ({
   const { theme } = useActiveTheme();
   const imageVersion = theme?.ogImageVersion || 'classic-2026';
   const socialImage = ogImage || `https://planningpoker.bytecoder.nl/images/og-image.jpg?v=${imageVersion}`;
+
+  useEffect(() => {
+    removeStaticFallbacks();
+  }, []);
 
   return (
     <Helmet>
