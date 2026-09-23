@@ -5,6 +5,8 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package*.json ./
+# Copy patch-package patches before npm ci so the postinstall hook applies them
+COPY patches ./patches
 
 # Use npm ci for faster, more reliable installs
 RUN npm ci

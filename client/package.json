@@ -10,7 +10,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^2.0.4",
-    "react-router-dom": "^6.18.0",
+    "react-router-dom": "^7.18.4",
     "react-scripts": "5.0.1",
     "socket.io-client": "^4.7.4"
   },
@@ -19,7 +19,8 @@
     "prebuild": "node scripts/sync-season-meta.mjs",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "postinstall": "patch-package"
   },
   "eslintConfig": {
     "extends": [
@@ -34,7 +35,9 @@
     "postcss": "^8.5.28",
     "serialize-javascript": "^7.1.1",
     "underscore": "^1.13.8",
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "@tootallnate/once": "^2.0.1",
+    "webpack-dev-server": "^5.2.6"
   },
   "browserslist": {
     "production": [
@@ -50,6 +53,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
+    "patch-package": "^8.0.1",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.3.5"
   }
