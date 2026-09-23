@@ -73,7 +73,7 @@ const Home = () => {
         url="https://planningpoker.bytecoder.nl/"
       />
       <div className="max-w-md mx-auto card-lg p-5">
-      <h1 className="text-xl font-bold text-center text-mocha-800 mb-5">Welcome to Planning Poker</h1>
+      <h1 className="text-xl font-bold text-center text-mocha-800 mb-5">Free Online Planning Poker for Agile Teams</h1>
       
       <div className="space-y-4">
         <form onSubmit={handleCreateSession} className="space-y-3.5">
