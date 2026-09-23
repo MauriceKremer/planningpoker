@@ -68,7 +68,7 @@ const Home = () => {
     <>
       <SEO 
         title="Free Online Planning Poker – No Signup, No Ads, No Tracking"
-        description="Create or join a Planning Poker session in seconds. Privacy-first: no signup, no ads, no tracking — votes vanish within 24 hours. Built as a passion project."
+        description="Create or join a Planning Poker session in seconds. No signup, no ads, no tracking. Estimate story points with your Agile team."
         keywords="planning poker, agile estimation, scrum poker, story points, sprint planning, agile tools, free planning poker, planning poker no signup, planning poker no ads, privacy first planning poker, remote estimation"
         url="https://planningpoker.bytecoder.nl/"
       />
