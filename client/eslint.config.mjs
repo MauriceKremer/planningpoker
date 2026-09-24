@@ -13,7 +13,7 @@ export default [
   js.configs.recommended,
   // Build/tooling config files are CommonJS — give them Node globals.
   {
-    files: ['*.config.js', 'postcss.config.js', 'tailwind.config.js'],
+    files: ['*.config.cjs', 'postcss.config.cjs', 'tailwind.config.cjs'],
     languageOptions: {
       sourceType: 'commonjs',
       globals: globals.node,

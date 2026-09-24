@@ -39,6 +39,16 @@ const useSessionSocket = ({ sessionId, currentUser, onSessionUpdate, onCurrentUs
     setIsSocketReady(false);
     isSocketReadyRef.current = false;
 
+    // The session is gone server-side (closed, cleaned up, or a reconnected
+    // socket rejected at join). Render the closed-session UI instead of
+    // leaving a blank zombie page. Shared by the two paths that can learn
+    // this: `connect_error` and the plain `error` reply to `join-session`.
+    const showSessionClosed = (info) => {
+      setSessionClosedInfo(info);
+      try { removeUserSession(sessionId); } catch { /* nothing stored */ }
+      setSessionClosed(true);
+    };
+
     socket.auth = { sessionId, userId: currentUser.id };
 
     const readyTimeout = setTimeout(() => {
@@ -53,12 +63,7 @@ const useSessionSocket = ({ sessionId, currentUser, onSessionUpdate, onCurrentUs
 
     const handleConnectError = (err) => {
       if (err.message === 'Session not found' || err.message === 'User not found in session') {
-        removeUserSession(sessionId);
-        // The session is gone server-side (closed or cleaned up). Show the
-        // closed-session UI instead of leaving a blank zombie page behind.
-        navigate('/session-closed', {
-          state: { sessionTitle: 'Planning Poker Session', moderatorName: null }
-        });
+        showSessionClosed({ sessionTitle: 'Planning Poker Session', moderatorName: null });
       }
     };
 
@@ -92,7 +97,17 @@ const useSessionSocket = ({ sessionId, currentUser, onSessionUpdate, onCurrentUs
     });
 
     // --- Socket event handlers ---
-    socket.on('error', (error) => console.error('Socket error:', error));
+    socket.on('error', (error) => {
+      // A reconnected socket can emit `close-session` before its follow-up
+      // `join-session` lands; the session is then already deleted and the
+      // server answers join-session with this plain error. Treat it the same
+      // as connect_error so the user is never stranded on a stale page.
+      if (error?.message === 'Session not found' || error?.message === 'User not found in session') {
+        showSessionClosed({ sessionTitle: 'Planning Poker Session', moderatorName: null });
+        return;
+      }
+      console.error('Socket error:', error);
+    });
 
     socket.on('vote-submitted', (data) =>
       onSessionUpdate(prev => applyEvent(prev, 'vote-submitted', data)));
@@ -161,9 +176,7 @@ const useSessionSocket = ({ sessionId, currentUser, onSessionUpdate, onCurrentUs
     });
 
     socket.on('session-closed', (data) => {
-      setSessionClosedInfo({ sessionTitle: data.sessionTitle, moderatorName: data.moderatorName });
-      try { removeUserSession(sessionId); } catch { /* nothing stored */ }
-      setSessionClosed(true);
+      showSessionClosed({ sessionTitle: data.sessionTitle, moderatorName: data.moderatorName });
     });
 
     socket.on('you-were-removed', (data) => { alert(`${data.reason} by ${data.removedBy}`); navigate('/'); });

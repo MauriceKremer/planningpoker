@@ -340,7 +340,12 @@ const setupSocketEvents = (io, options = {}) => {
         const session = await getSession(sessionId);
         if (session.moderatorId !== moderatorId) return socket.emit('error', { message: 'Only the moderator can close the session' });
 
-        io.to(sessionId).emit('session-closed', { sessionTitle: session.title, moderatorName: session.moderator, closedAt: new Date().toISOString() });
+        const closedAt = new Date().toISOString();
+        io.to(sessionId).emit('session-closed', { sessionTitle: session.title, moderatorName: session.moderator, closedAt });
+        // The acting socket may have reconnected and not yet re-joined the room
+        // (join-session can race close-session after a transport blip); the
+        // room broadcast above then misses it. Confirm directly to it as well.
+        socket.emit('session-closed', { sessionTitle: session.title, moderatorName: session.moderator, closedAt });
         deleteSession(sessionId);
 
         // Disconnect all sockets in this session

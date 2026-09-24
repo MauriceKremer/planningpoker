@@ -86,7 +86,6 @@ const limiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: parseInt(process.env.API_RATE_LIMIT || '100', 10), // overridable for E2E stacks
   message: 'Too many requests from this IP, please try again later.',
-  message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
   skipFailedRequests: false,
