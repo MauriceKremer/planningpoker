@@ -97,7 +97,7 @@ for (const f of htmlFiles) {
   const executableScripts = (h.match(/<script(?![^>]*type="application\/ld\+json")[^>]*>/gi) || []);
   check(executableScripts.length === 1, `${f}: exactly one executable <script> tag`);
   check(/<script[^>]+type="module"[^>]+src="\/assets\/[^"]+\.js"/i.test(h), `${f}: external module script from /assets/`);
-  const scriptBlocks = [...h.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
+  const scriptBlocks = [...h.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/gi)];
   const scriptOpenTags = (h.match(/<script\b[^>]*>/gi) || []).length;
   check(scriptBlocks.length === scriptOpenTags, `${f}: every <script> tag has a matching close tag`);
   check(
