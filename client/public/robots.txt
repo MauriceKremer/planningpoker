@@ -8,8 +8,5 @@ Disallow: /session/
 # Sitemap
 Sitemap: https://planningpoker.bytecoder.nl/sitemap.xml
 
-# Agentic Resource Discovery manifest (ARD)
-Agentmap: https://planningpoker.bytecoder.nl/.well-known/ai-catalog.json
-
 # Crawl-delay (optional, helps prevent server overload)
 Crawl-delay: 1
