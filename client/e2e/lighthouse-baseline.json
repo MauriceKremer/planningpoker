@@ -1,0 +1,30 @@
+{
+  "measuredAt": "2026-09-24",
+  "preset": "desktop",
+  "budgets": {
+    "performance": 0.9,
+    "accessibility": 1,
+    "seo": 1,
+    "lcpMs": 2500,
+    "cls": 0.05,
+    "tbtMs": 200
+  },
+  "results": {
+    "/about": {
+      "performance": 0.99,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 2107,
+      "cls": 0,
+      "tbtMs": 0
+    },
+    "/join": {
+      "performance": 0.99,
+      "accessibility": 1,
+      "seo": 1,
+      "lcpMs": 2106,
+      "cls": 0,
+      "tbtMs": 0
+    }
+  }
+}

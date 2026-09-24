@@ -22,8 +22,15 @@
  * Exits non-zero with a clear message on the first violation.
  */
 import { readFileSync, existsSync, readdirSync, rmSync } from 'fs';
+import { gzipSync } from 'zlib';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+
+// Frozen M4 ceiling for the main JS bundle (gzip). React 19 raised it ~24%
+// (98.9 -> 122.3 kB gzip); this freezes it just above the new baseline with a
+// few percent of headroom. Enforced here (deterministic per build) rather than
+// in Lighthouse; see migration_plan.md M4.
+const MAX_JS_GZIP_BYTES = 128000;
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const build = join(root, 'build');
@@ -122,6 +129,10 @@ const baseHtml = html['index.html'] || '';
 const jsSrc = baseHtml.match(/<script[^>]+src="(\/assets\/[^"]+\.js)"/)?.[1];
 check(Boolean(jsSrc && jsSrc.match(/-[A-Za-z0-9$_-]{8,}\.js$/)), 'bundle filename is content-hashed');
 check(Boolean(jsSrc && existsSync(join(build, jsSrc.slice(1)))), `referenced bundle exists: ${jsSrc}`);
+if (jsSrc && existsSync(join(build, jsSrc.slice(1)))) {
+  const gzipBytes = gzipSync(readFileSync(join(build, jsSrc.slice(1)))).length;
+  check(gzipBytes <= MAX_JS_GZIP_BYTES, `bundle gzip ${gzipBytes} B ≤ ${MAX_JS_GZIP_BYTES} B (M4 freeze)`);
+}
 const cssHref = baseHtml.match(/<link[^>]+rel="stylesheet"[^>]+href="(\/assets\/[^"]+\.css)"/)?.[1];
 check(Boolean(cssHref && existsSync(join(build, cssHref.slice(1)))), `referenced css exists: ${cssHref}`);
 
