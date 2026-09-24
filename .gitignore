@@ -60,3 +60,6 @@ Thumbs.db
 tmp/
 temp/
 generate-social-cards.py
+
+# Local planning docs (not for the repo)
+migration_plan.md
