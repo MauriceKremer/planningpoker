@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import SEO from '../components/SEO';
+import AuthorLinks from '../components/AuthorLinks';
 
 // Single source of truth for the FAQ: the visible list below AND the
 // FAQPage JSON-LD schema are rendered from this array, so the structured
@@ -529,6 +530,18 @@ const About = () => {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Author — visible on both tabs, so the pre-rendered page (and any
+            visitor deciding whether to trust this free, anonymous tool) always
+            sees the real person who built it. */}
+        <section className="mt-2 mb-6 panel-honey">
+          <h2 className="text-base font-semibold mb-2.5 text-mocha-800">Built by Maurice Kremer</h2>
+          <p className="text-sm text-mocha-600 mb-3">
+            Planning Poker is an independent passion project, built and maintained in spare
+            time. Questions, feedback or ideas for the tool are always welcome.
+          </p>
+          <AuthorLinks />
         </section>
       </div>
     </div>
