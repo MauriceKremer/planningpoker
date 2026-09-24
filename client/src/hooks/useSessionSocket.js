@@ -54,7 +54,11 @@ const useSessionSocket = ({ sessionId, currentUser, onSessionUpdate, onCurrentUs
     const handleConnectError = (err) => {
       if (err.message === 'Session not found' || err.message === 'User not found in session') {
         removeUserSession(sessionId);
-
+        // The session is gone server-side (closed or cleaned up). Show the
+        // closed-session UI instead of leaving a blank zombie page behind.
+        navigate('/session-closed', {
+          state: { sessionTitle: 'Planning Poker Session', moderatorName: null }
+        });
       }
     };
 

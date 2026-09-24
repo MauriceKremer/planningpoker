@@ -20,6 +20,21 @@ export default [
     },
   },
   {
+    files: ['e2e/**/*.{js,mjs}', 'playwright.config.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+        ...globals.vitest,
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
     files: ['src/**/*.{js,jsx,mjs}', 'vite.config.mjs', 'eslint.config.mjs'],
     languageOptions: {
       ecmaVersion: 'latest',

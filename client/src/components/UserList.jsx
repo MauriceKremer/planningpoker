@@ -96,6 +96,7 @@ const UserList = React.memo(({ users, votes, votingComplete, votedUserIds, curre
         return (
           <div 
             key={user.id} 
+            data-testid={`user-${user.name}`}
             className={`flex items-center justify-between px-2 py-1.5 rounded-lg border transition-colors ${
               currentUser?.id === user.id
                 ? 'bg-ember-50/80 border-ember-200'

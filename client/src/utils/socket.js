@@ -9,7 +9,11 @@ export const useSocket = () => {
   useEffect(() => {
     // Create socket in paused state (no autoConnect) until auth is set
     const socketInstance = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
+      // Polling-first (Socket.IO's default handshake), upgrading to websocket
+      // afterwards. A direct first websocket connect races with the reverse
+      // proxy under Docker Desktop (connection closes ~1ms after the upgrade);
+      // polling-first + upgrade is robust and is what socket.io does by default.
+      transports: ['polling', 'websocket'],
       upgrade: true,
       rememberUpgrade: true,
       reconnection: true,

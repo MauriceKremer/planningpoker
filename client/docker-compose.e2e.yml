@@ -1,0 +1,24 @@
+services:
+  server:
+    environment:
+      # E2E runs against http://localhost:4080 — the browser origin must be
+      # whitelisted or every API call is CORS-blocked.
+      - CLIENT_URL=http://localhost:4080
+      # Raise the server-side limiter for the E2E suite (prod keeps 100/5min).
+      - API_RATE_LIMIT=10000
+      # Socket-level debug logs for the E2E run (server stays silent in prod).
+      - DEBUG=true
+  client:
+    build:
+      args:
+        # Bake localhost endpoints so the E2E bundle talks to the local stack.
+        - VITE_API_URL=http://localhost:4080/api
+        - VITE_SOCKET_URL=http://localhost:4080
+  nginx:
+    volumes:
+      # E2E copy of the production nginx.conf with raised rate limits. The
+      # copy is committed; scripts/e2e-stack.sh fails fast when it drifts
+      # from the production conf. Production rate limiting is untouched.
+      # NOTE: relative paths resolve against the project directory (the
+      # first -f file, repo root), NOT this override file's directory.
+      - ./nginx/nginx-e2e.conf:/etc/nginx/conf.d/default.conf:ro

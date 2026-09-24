@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // Migrated from CRA (react-scripts 5.0.1, deprecated) in M1 — see migration_plan.md.
@@ -26,5 +26,7 @@ export default defineConfig({
     // globals: true is required by @testing-library/react's automatic
     // cleanup (it hooks into the global afterEach).
     globals: true,
+    // E2E specs live in e2e/ and belong to Playwright, not Vitest.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });
