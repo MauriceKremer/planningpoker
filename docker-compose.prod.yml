@@ -8,7 +8,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8081
-      - CLIENT_URL=https://planningpoker.bytecoder.nl
+      # Overridable for local testing: CLIENT_URL=http://localhost:4080 docker compose -f docker-compose.prod.yml up -d
+      - CLIENT_URL=${CLIENT_URL:-https://planningpoker.bytecoder.nl}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/api/health"]
       interval: 30s
