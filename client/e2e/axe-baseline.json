@@ -1,5 +1,5 @@
 {
-  "//": "A11y baseline (migration_plan.md). Entries here are KNOWN, pre-existing violations; the suite fails on anything NEW. M6 shrinks this file to {} — at that point the strict 0-violations gate is active. The /session heading-order (h1 → h4 'Moderator Controls') is queued for the M6 heading-hierarchy pass.",
+  "//": "A11y baseline. Entries here are KNOWN, pre-existing violations; the suite fails on anything NEW. The /session heading-order (h1 → h4 'Moderator Controls') is the only current entry — fixing the heading hierarchy removes it and activates the strict 0-violations gate.",
   "home": [],
   "about": [],
   "join": [],

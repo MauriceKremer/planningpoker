@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E2E stack control (migration_plan.md M2).
+# E2E stack control.
 #
 # Runs the REAL production stack (docker-compose.prod.yml: nginx + server +
 # copy-container) with an e2e override that points the baked client bundle at

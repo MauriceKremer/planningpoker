@@ -5,16 +5,15 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createSessionViaApi, seedSessionMembership } from './helpers.js';
 
-// WCAG 2.2 AA gate (migration_plan.md M6 = zero violations).
+// WCAG 2.2 AA gate: zero new violations.
 //
-// M2 establishes the safety net, so violations that exist in the current UI
-// are recorded in e2e/axe-baseline.json: the test asserts "nothing NEW beyond
-// the baseline" and fails on regressions. M6 (UX & styling) shrinks the
-// baseline to empty — at that point the strict "0 violations" gate is active.
-// This spec NEVER writes the baseline: tests must not mutate tracked fixtures,
-// and the file is scanned concurrently by the chromium and chromium-mobile
-// projects. Fixing a violation means deleting its entry here (the resolved
-// entries are printed to guide the M6 pass).
+// Violations that exist in the current UI are recorded in e2e/axe-baseline.json:
+// the test asserts "nothing NEW beyond the baseline" and fails on regressions.
+// Removing a baseline entry (once its fix lands) is the path to the strict
+// "0 violations" gate. This spec NEVER writes the baseline: tests must not
+// mutate tracked fixtures, and the file is scanned concurrently by the
+// chromium and chromium-mobile projects. Fixing a violation means deleting
+// its entry here (the resolved entries are printed to guide the cleanup).
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BASELINE_PATH = join(__dirname, 'axe-baseline.json');
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];

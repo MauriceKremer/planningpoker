@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// M2 test baseline (migration_plan.md).
+// Playwright configuration.
 // Runs the full suite against the REAL production stack (docker-compose.prod.yml:
 // nginx + server) started by scripts/e2e-stack.sh — see webServer below.
 const baseURL = process.env.E2E_BASE_URL || 'http://localhost:4080';
@@ -20,8 +20,8 @@ export default defineConfig({
   workers: 2,
   // Absorb the rare transport-level flake (Docker Desktop's linuxkit websocket
   // proxy sometimes closes a connection ~1ms after the upgrade; socket.io
-  // reconnects fine). Documented in migration_plan.md — do NOT use retries to
-  // paper over functional failures; flaky tests still surface in the report.
+  // reconnects fine). Do NOT raise this to paper over functional failures;
+  // flaky tests still surface in the report.
   retries: 1,
   reporter: [['list']],
   use: {

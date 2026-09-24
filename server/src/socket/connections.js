@@ -111,6 +111,4 @@ module.exports = {
   activeConnections, socketUserMap, userSocketMap,
   // Heartbeat tracking
   updateLastSeen, getLastSeen, clearLastSeenForSession, clearLastSeen,
-  // Expose maps for migration compatibility (cleanup handler in close-session)
-  lastSeenMap,
 };

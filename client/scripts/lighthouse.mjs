@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Lighthouse gate (migration_plan.md M4).
+ * Lighthouse gate.
  *
  * Runs Lighthouse (desktop preset) against the real prod stack for the two
  * pre-rendered public pages that are in scope, and fails when a budget is
@@ -11,12 +11,12 @@
  * Chrome comes from Playwright's Chrome for Testing (override with CHROME_PATH),
  * so no browser download is added.
  *
- * Budgets are frozen at the M4 baseline, not the plan's aspirational numbers:
+ * Budgets are frozen at the measured baseline, not aspirational numbers:
  * React 19 raised the initial JS ~24% (98.9 -> 122.3 kB gzip) and the full-DOM
  * replacement gates LCP at bundle execution (~2.1 s measured). Tightening them
- * (hydration, deferred React, critical CSS) is M6 work. The bundle *size* is
- * enforced deterministically in scripts/verify-build.mjs; this script owns the
- * runtime metrics.
+ * (hydration, deferred React, critical CSS) is follow-up work. The bundle
+ * *size* is enforced deterministically in scripts/verify-build.mjs; this script
+ * owns the runtime metrics.
  *
  * Usage:
  *   node scripts/lighthouse.mjs                  # assert budgets

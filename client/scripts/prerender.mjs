@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build-time pre-render (migration_plan.md M3).
+ * Build-time pre-render.
  *
  * Runs after `vite build` (see package.json "build"). Loads the SSR entry
  * through Vite's `ssrLoadModule` — so JSX, `import.meta.env` and JSON imports

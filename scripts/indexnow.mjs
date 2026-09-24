@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * IndexNow deploy hook (migration_plan.md M3).
+ * IndexNow deploy hook.
  *
  * Submits every URL in the committed sitemap to IndexNow, which instantly
  * notifies Bing, Seznam and other participating engines that the pages

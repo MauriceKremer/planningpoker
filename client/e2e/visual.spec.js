@@ -4,8 +4,8 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createSessionViaApi, joinSessionViaApi, seedSessionMembership } from './helpers.js';
 
-// Visual regression matrix (migration_plan.md M2): every public page across
-// every seasonal theme, desktop + mobile. Zero diff tolerance (config).
+// Visual regression matrix: every public page across every seasonal theme,
+// desktop + mobile. Zero diff tolerance (config).
 // The ?theme=<id> URL parameter is the documented runtime override.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const themes = JSON.parse(readFileSync(join(__dirname, '..', 'src', 'theme', 'themes.json'), 'utf-8'));

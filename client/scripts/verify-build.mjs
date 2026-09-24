@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build contract test (migration_plan.md M1, extended in M3).
+ * Build contract test.
  *
  * Runs automatically after every build (npm postbuild) and fails the build
  * when the output violates the contract that nginx, the CSP, the AI-discovery
@@ -29,7 +29,7 @@ import { fileURLToPath } from 'url';
 // Frozen M4 ceiling for the main JS bundle (gzip). React 19 raised it ~24%
 // (98.9 -> 122.3 kB gzip); this freezes it just above the new baseline with a
 // few percent of headroom. Enforced here (deterministic per build) rather than
-// in Lighthouse; see migration_plan.md M4.
+// in Lighthouse.
 const MAX_JS_GZIP_BYTES = 128000;
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');

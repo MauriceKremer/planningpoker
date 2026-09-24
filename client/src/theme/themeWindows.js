@@ -3,9 +3,9 @@
  * meta-sync script (client/scripts/sync-season-meta.mjs) so the MM-DD window
  * rules exist exactly once in JS land.
  *
- * ESM since the Vite migration (client/package.json has "type": "module"),
- * loaded by the prebuild script via dynamic import and bundled for the SPA by
- * Vite. Keep this file free of imports so it stays trivially loadable by both.
+ * ESM (client/package.json has "type": "module"), loaded by the prebuild
+ * script via dynamic import and bundled for the SPA by Vite. Keep this file
+ * free of imports so it stays trivially loadable by both.
  */
 
 /**

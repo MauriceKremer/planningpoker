@@ -4,7 +4,7 @@ import { renderToString } from 'react-dom/server';
 import { AppShell } from '../App';
 
 /**
- * Build-time pre-render entry (migration_plan.md M3, reworked for React 19 in M4).
+ * Build-time pre-render entry.
  *
  * Loaded by scripts/prerender.mjs through Vite's `ssrLoadModule` and rendered
  * once per public route. Non-JS crawlers (GPTBot, ClaudeBot, PerplexityBot, …)

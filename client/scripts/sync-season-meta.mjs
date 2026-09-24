@@ -30,8 +30,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 // Shared seasonal-window logic — the same code the SPA runs, so JS land has
-// exactly one copy of the MM-DD rules (ESM since the Vite migration, loaded
-// with a dynamic import).
+// exactly one copy of the MM-DD rules (ESM, loaded with a dynamic import).
 const { resolveTheme } = await import('../src/theme/themeWindows.js');
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

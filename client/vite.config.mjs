@@ -1,11 +1,11 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
-// Migrated from CRA (react-scripts 5.0.1, deprecated) in M1 — see migration_plan.md.
+// Migrated from CRA (react-scripts 5.0.1, deprecated).
 //
 // Deliberate choices that keep the deployment pipeline byte-identical:
 // - outDir 'build': the Dockerfile, nginx container and deploy.sh all expect
-//   the CRA-era output path. Changing it would touch three other systems.
+//   the historical output path. Changing it would touch three other systems.
 // - sourcemap: CRA shipped maps; keep parity so error reporting and the
 //   nginx cache rules (js/css catch-all) behave the same.
 // - single bundle, no inline scripts: the strict CSP in nginx/nginx.conf

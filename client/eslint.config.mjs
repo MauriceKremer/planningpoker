@@ -4,7 +4,7 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 
-// Flat ESLint config (M1) — replaces the CRA-era `eslintConfig` package.json
+// Flat ESLint config — replaces the CRA-era `eslintConfig` package.json
 // field, which only worked under react-scripts.
 export default [
   {
@@ -63,8 +63,7 @@ export default [
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       // only-export-components is a Fast-Refresh DX hint, not a correctness
       // rule; it fires false positives on data/hook modules (themes.js).
-      // Deliberately off — see migration_plan.md rule: no rules silenced to
-      // hide real problems; this one has no correctness value here.
+      // Deliberately off: this one has no correctness value here.
       'react-refresh/only-export-components': 'off',
     },
   },
