@@ -21,11 +21,11 @@ import { AppShell } from '../App';
  * @param {string} url Route to render, e.g. '/' or '/about'.
  * @returns {{ head: string, body: string }}
  */
-// Case-insensitive because HTML tag names are case-insensitive (CodeQL
-// js/bad-tag-filter): a `<SCRIPT>` variant must be hoisted just like any
-// other head tag.
+// Case-insensitive because HTML tag names are case-insensitive, and tolerant
+// of whitespace in end tags (`</script >` is valid HTML) — otherwise a variant
+// would slip past the head hoist (CodeQL js/bad-tag-filter).
 const LEADING_HEAD_TAG =
-  /^(<title[\s\S]*?<\/title>|<meta\b[^>]*\/?>|<link\b[^>]*\/?>|<script\b[^>]*>[\s\S]*?<\/script>)/i;
+  /^(<title[\s\S]*?<\/title>|<meta\b[^>]*\/?>|<link\b[^>]*\/?>|<script\b[^>]*>[\s\S]*?<\/script\s*>)/i;
 
 export function render(url) {
   const html = renderToString(
