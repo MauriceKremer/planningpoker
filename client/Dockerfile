@@ -31,7 +31,7 @@ COPY --from=builder /app/build ./build
 
 # Create a script to copy files to the mounted volume
 RUN echo '#!/bin/sh' > /copy-files.sh && \
-    echo 'cp -r /app/build/* /output/' >> /copy-files.sh && \
+    echo 'cp -r /app/build/. /output/' >> /copy-files.sh && \
     echo 'echo "Client build files copied to dockerdata/client-build"' >> /copy-files.sh && \
     echo 'sleep infinity' >> /copy-files.sh && \
     chmod +x /copy-files.sh
