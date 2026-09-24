@@ -2,6 +2,8 @@
 
 A real-time Planning Poker application for Agile teams to estimate tasks collaboratively. Built with React, Node.js, Socket.IO, and Docker.
 
+**[▶ Play now — free, no signup required](https://planningpoker.bytecoder.nl/)**
+
 ## Features
 
 - 🎯 Create and join estimation sessions with unique session codes
@@ -27,8 +29,8 @@ A real-time Planning Poker application for Agile teams to estimate tasks collabo
 ## Technology Stack
 
 **Frontend:**
-- React 18
-- React Router v6
+- React 19
+- React Router v7
 - Tailwind CSS
 - Socket.IO Client
 

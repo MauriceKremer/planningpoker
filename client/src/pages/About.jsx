@@ -28,6 +28,14 @@ const FAQS = [
     a: "Fibonacci, Modified Fibonacci, Mike Cohn's classic set, T-shirt sizes — or your own comma-separated custom values.",
   },
   {
+    q: 'Does it work on phones and tablets?',
+    a: 'Yes. The cards, results and moderator controls are fully responsive, so the complete flow works on mobile, tablet and desktop.',
+  },
+  {
+    q: 'Do we need to install anything?',
+    a: 'No. Planning Poker runs entirely in your browser — the moderator and every participant just open the session link and play. Nothing to install.',
+  },
+  {
     q: 'How are inactive participants handled?',
     a: 'Automatically: after 20 minutes away a 5-minute warning countdown starts, and they are removed after 25 minutes in total (moderators are exempt). Participants can also start a removal vote (25% of the room), and moderators can remove people directly.',
   },
