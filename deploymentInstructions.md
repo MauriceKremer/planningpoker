@@ -113,28 +113,27 @@ cd server && npx jest --forceExit
 # (dev-only transitive issues can be addressed separately)
 cd server && npm audit
 
-# Client tests — the `react-scripts` bin wrapper can be broken on some setups
-# (e.g. Node 24: "Cannot find module '../scripts/test'"); in that case invoke the
-# script directly:
-cd client && CI=true node node_modules/react-scripts/scripts/test.js --watchAll=false
+# Client tests (Vitest since the Vite migration — M1)
+cd client && npm test
 
 # Client production build (the step that runs inside Docker)
-cd client && node node_modules/react-scripts/scripts/build.js
+cd client && npm run build
 ```
 
 All three must pass before `git push`.
 
 ## Known gotchas
 
-1. **Client source must be ESM.** CRA/webpack resolves named imports statically. A module
+1. **Client source must be ESM.** Vite resolves named imports statically. A module
    written as CommonJS (`module.exports = { foo }`) imported via `import { foo }` fails the
    production build with `'foo' is not exported from '...'`. Every file under `client/src`
    must use `export const` / `export { }`. (Hit once with `utils/sessionDelta.js` — commit
-   `e687d9d`.)
+   `e687d9d`; and with `theme/themeWindows.js` during the Vite migration, where the
+   build-contract gate made the failure impossible to miss.)
 
-2. **`react-scripts` bin wrapper is broken on this dev machine** under Node 24, but
-   `node_modules/react-scripts/scripts/{test,build}.js` work fine when invoked directly via
-   `node` (see commands above). On the server (Docker, Node 20) the wrapper works normally.
+2. **JSX lives in `.jsx` files.** Unlike CRA, Vite does not transform JSX inside plain
+   `.js` files. All components, pages and the entry file were renamed to `.jsx` in M1;
+   new JSX files must use the `.jsx` extension.
 
 3. **Native modules:** if a dependency requiring compilation is ever re-added, the
    `python3 make g++` build toolchain must be restored to `server/Dockerfile.prod`

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { saveCardSetPreference } from '../utils/cardSetStorage';
 
 const PREDEFINED_CARD_SETS = {
@@ -8,7 +8,7 @@ const PREDEFINED_CARD_SETS = {
   tshirt: { name: 'T-Shirt', values: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] }
 };
 
-const ModeratorControls = ({ session, onStartVoting, onResetVotes, onStopRound, onTestSound, onUpdateCardSet, onTransferModerator, onCloseSession }) => {
+const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferModerator, onCloseSession }) => {
   const [showCardSetModal, setShowCardSetModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedCardSet, setSelectedCardSet] = useState('fibonacci');

@@ -4,57 +4,40 @@
   "description": "Frontend React app for Planning Poker",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^14.5.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^2.0.4",
     "react-router-dom": "^7.18.4",
-    "react-scripts": "5.0.1",
     "socket.io-client": "^4.7.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "vite",
     "prebuild": "node scripts/sync-season-meta.mjs",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "postinstall": "patch-package"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "overrides": {
-    "nth-check": "^2.1.1",
-    "@svgr/webpack": "^6.5.1",
-    "svgo": "^2.8.4",
-    "postcss": "^8.5.28",
-    "serialize-javascript": "^7.1.1",
-    "underscore": "^1.13.8",
-    "uuid": "^11.1.1",
-    "@tootallnate/once": "^2.0.1",
-    "webpack-dev-server": "^5.2.6"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "build": "vite build",
+    "postbuild": "node scripts/verify-build.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ."
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^14.5.1",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^5.0.1",
     "autoprefixer": "^10.4.16",
-    "patch-package": "^8.0.1",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^6.0.0",
+    "eslint-plugin-react-refresh": "^0.4.0",
+    "globals": "^16.0.0",
+    "jsdom": "^26.0.0",
     "postcss": "^8.5.28",
-    "tailwindcss": "^3.3.5"
-  }
+    "tailwindcss": "^3.3.5",
+    "vite": "^7.0.0",
+    "vitest": "^5.0.1"
+  },
+  "type": "module"
 }

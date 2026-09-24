@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { joinSession } from '../utils/api';
 import { saveUserSession } from '../utils/sessionStorage';

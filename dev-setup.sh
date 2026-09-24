@@ -77,8 +77,8 @@ fi
 # Client .env
 if [[ ! -f "client/.env" ]]; then
     cat > client/.env << EOF
-REACT_APP_API_URL=http://localhost:8081/api
-REACT_APP_SOCKET_URL=http://localhost:8081
+VITE_API_URL=http://localhost:8081/api
+VITE_SOCKET_URL=http://localhost:8081
 EOF
     echo -e "${GREEN}✅ Created client/.env${NC}"
 else

@@ -1,4 +1,3 @@
-import React from 'react';
 
 const VoteOutBanner = ({ activeVoteOut, currentUserId, onVote, onCancel }) => {
   if (!activeVoteOut) return null;

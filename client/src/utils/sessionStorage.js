@@ -18,7 +18,7 @@ const isStorageAvailable = (storageType) => {
     storage.setItem(test, test);
     storage.removeItem(test);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };

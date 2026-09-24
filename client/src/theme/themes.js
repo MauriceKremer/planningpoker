@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import themeWindows from './themeWindows';
+import { resolveTheme } from './themeWindows';
 import themes from './themes.json';
-
-const { resolveTheme } = themeWindows;
 
 function getThemeOverride() {
   if (typeof window === 'undefined') return null;

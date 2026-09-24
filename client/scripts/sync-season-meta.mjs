@@ -3,7 +3,7 @@
  * Sync static index.html meta tags with the currently active seasonal theme.
  *
  * Reads client/src/theme/themes.json, resolves the window for today, then
- * updates client/public/index.html:
+ * updates client/index.html (project root — Vite's entry HTML since M1):
  *   - <meta name="theme-color" content="...">
  *   - og:image and twitter:image ?v= cache-buster
  *   - data-theme attribute on <html> (correct palette on first paint, before
@@ -26,18 +26,17 @@
  *   node scripts/sync-season-meta.mjs --theme christmas
  */
 import { readFileSync, writeFileSync } from 'fs';
-import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 // Shared seasonal-window logic — the same code the SPA runs, so JS land has
-// exactly one copy of the MM-DD rules (CommonJS, loadable without a build).
-const require = createRequire(import.meta.url);
-const { resolveTheme } = require('../src/theme/themeWindows.js');
+// exactly one copy of the MM-DD rules (ESM since the Vite migration, loaded
+// with a dynamic import).
+const { resolveTheme } = await import('../src/theme/themeWindows.js');
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const THEMES_PATH = join(__dirname, '..', 'src', 'theme', 'themes.json');
-const INDEX_PATH = join(__dirname, '..', 'public', 'index.html');
+const INDEX_PATH = join(__dirname, '..', 'index.html');
 
 const themes = JSON.parse(readFileSync(THEMES_PATH, 'utf-8'));
 

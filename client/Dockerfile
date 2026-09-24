@@ -5,17 +5,15 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package*.json ./
-# Copy patch-package patches before npm ci so the postinstall hook applies them
-COPY patches ./patches
 
 # Use npm ci for faster, more reliable installs
 RUN npm ci
 
-# Accept build arguments
-ARG REACT_APP_API_URL
-ARG REACT_APP_SOCKET_URL
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
-ENV REACT_APP_SOCKET_URL=$REACT_APP_SOCKET_URL
+# Accept build arguments (Vite bakes VITE_* vars at build time)
+ARG VITE_API_URL
+ARG VITE_SOCKET_URL
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
 
 # Copy source code last to maximize cache hits
 COPY . .

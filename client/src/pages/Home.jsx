@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createSession } from '../utils/api';
 import { getRandomTitleSuggestion } from '../utils/titleGenerator';

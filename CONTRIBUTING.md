@@ -17,8 +17,8 @@ If in doubt, ask first in an issue before building it.
 
 ## 🚀 Development setup
 
-Prerequisites: Node.js 18+ and npm. For tests, Node 20 is recommended
-(`react-scripts`' test runner breaks on Node 24).
+Prerequisites: Node.js 20+ and npm. The client builds with **Vite** (M1 of
+migration_plan.md); any current Node works — no react-scripts quirks anymore.
 
 Quick way:
 

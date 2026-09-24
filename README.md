@@ -231,8 +231,8 @@ DEBUG=true                     # Enable detailed debug logging (default: false i
 
 ### Client (.env)
 ```env
-REACT_APP_API_URL=http://localhost:8081/api
-REACT_APP_SOCKET_URL=http://localhost:8081
+VITE_API_URL=http://localhost:8081/api
+VITE_SOCKET_URL=http://localhost:8081
 ```
 
 ## Deployment

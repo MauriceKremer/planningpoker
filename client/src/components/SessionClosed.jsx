@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clearAllSessionData } from '../utils/sessionStorage';
 
@@ -9,7 +8,7 @@ const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }) => {
     try {
       // Clear all stored session data to avoid auto-restore
       clearAllSessionData();
-    } catch (e) {}
+    } catch { /* nothing stored — fresh visit */ }
     navigate('/');
   };
 

@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
 
 // Track server version for cache busting
 let serverStartTime = null;
@@ -74,7 +74,7 @@ const request = async (endpoint, options = {}) => {
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch (e) { /* non-JSON body */ }
+    try { data = text ? JSON.parse(text) : null; } catch { /* non-JSON body */ }
     const error = new Error(`Request failed: ${response.status}`);
     // Structured error contract: callers match on HTTP status (the stable
     // contract), with the parsed body available as error.data.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { joinSession } from '../utils/api';
 
 const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }) => {

@@ -8,7 +8,7 @@ import { applyEvent } from '../utils/sessionDelta';
  * Custom hook to manage socket connection lifecycle for a session.
  * Extracts the large socket event handler block from Session.js.
  */
-const useSessionSocket = ({ sessionId, currentUser, session, onSessionUpdate, onCurrentUserUpdate }) => {
+const useSessionSocket = ({ sessionId, currentUser, onSessionUpdate, onCurrentUserUpdate }) => {
   const navigate = useNavigate();
   const socket = useSocket();
   const [isSocketReady, setIsSocketReady] = useState(false);
@@ -28,8 +28,8 @@ const useSessionSocket = ({ sessionId, currentUser, session, onSessionUpdate, on
     try {
       const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmgfAzCB2OqzZR8ELoHM88t7KgU=');
       audio.volume = 0.3;
-      audio.play().catch(() => {});
-    } catch (e) {}
+      audio.play().catch(() => { /* autoplay rejection is expected and harmless */ });
+    } catch { /* audio unsupported — sound is optional */ }
   }, []);
 
   useEffect(() => {
@@ -158,14 +158,14 @@ const useSessionSocket = ({ sessionId, currentUser, session, onSessionUpdate, on
 
     socket.on('session-closed', (data) => {
       setSessionClosedInfo({ sessionTitle: data.sessionTitle, moderatorName: data.moderatorName });
-      try { removeUserSession(sessionId); } catch (e) {}
+      try { removeUserSession(sessionId); } catch { /* nothing stored */ }
       setSessionClosed(true);
     });
 
     socket.on('you-were-removed', (data) => { alert(`${data.reason} by ${data.removedBy}`); navigate('/'); });
 
     socket.on('session-cleanup', (data) => {
-      try { removeUserSession(sessionId); } catch (e) {}
+      try { removeUserSession(sessionId); } catch { /* already gone */ }
       alert(`Session closed: ${data.message}`);
       navigate('/');
     });

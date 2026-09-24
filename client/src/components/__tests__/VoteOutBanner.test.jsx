@@ -1,6 +1,6 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 import VoteOutBanner from '../VoteOutBanner';
 
 const baseVoteOut = {
@@ -21,8 +21,8 @@ describe('VoteOutBanner', () => {
       <VoteOutBanner
         activeVoteOut={baseVoteOut}
         currentUserId="u-1"
-        onVote={jest.fn()}
-        onCancel={jest.fn()}
+        onVote={vi.fn()}
+        onCancel={vi.fn()}
       />
     );
     expect(screen.getByText(/Vote to remove Charlie/i)).toBeInTheDocument();
@@ -36,8 +36,8 @@ describe('VoteOutBanner', () => {
       <VoteOutBanner
         activeVoteOut={baseVoteOut}
         currentUserId="u-3"
-        onVote={jest.fn()}
-        onCancel={jest.fn()}
+        onVote={vi.fn()}
+        onCancel={vi.fn()}
       />
     );
     expect(screen.getByText(/Vote to remove Charlie/i)).toBeInTheDocument();
@@ -49,21 +49,21 @@ describe('VoteOutBanner', () => {
       <VoteOutBanner
         activeVoteOut={baseVoteOut}
         currentUserId="u-5"
-        onVote={jest.fn()}
-        onCancel={jest.fn()}
+        onVote={vi.fn()}
+        onCancel={vi.fn()}
       />
     );
     expect(screen.queryByRole('button', { name: /Yes/i })).not.toBeInTheDocument();
   });
 
   test('calls onVote with yes', () => {
-    const onVote = jest.fn();
+    const onVote = vi.fn();
     render(
       <VoteOutBanner
         activeVoteOut={baseVoteOut}
         currentUserId="u-1"
         onVote={onVote}
-        onCancel={jest.fn()}
+        onCancel={vi.fn()}
       />
     );
     fireEvent.click(screen.getByRole('button', { name: /Yes/i }));
@@ -71,13 +71,13 @@ describe('VoteOutBanner', () => {
   });
 
   test('calls onVote with no', () => {
-    const onVote = jest.fn();
+    const onVote = vi.fn();
     render(
       <VoteOutBanner
         activeVoteOut={baseVoteOut}
         currentUserId="u-1"
         onVote={onVote}
-        onCancel={jest.fn()}
+        onCancel={vi.fn()}
       />
     );
     fireEvent.click(screen.getByRole('button', { name: /No/i }));
@@ -89,8 +89,8 @@ describe('VoteOutBanner', () => {
       <VoteOutBanner
         activeVoteOut={baseVoteOut}
         currentUserId="u-2"
-        onVote={jest.fn()}
-        onCancel={jest.fn()}
+        onVote={vi.fn()}
+        onCancel={vi.fn()}
       />
     );
     expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
@@ -99,8 +99,8 @@ describe('VoteOutBanner', () => {
       <VoteOutBanner
         activeVoteOut={baseVoteOut}
         currentUserId="u-1"
-        onVote={jest.fn()}
-        onCancel={jest.fn()}
+        onVote={vi.fn()}
+        onCancel={vi.fn()}
       />
     );
     expect(screen.queryByRole('button', { name: /Cancel/i })).not.toBeInTheDocument();
@@ -111,8 +111,8 @@ describe('VoteOutBanner', () => {
       <VoteOutBanner
         activeVoteOut={null}
         currentUserId="u-1"
-        onVote={jest.fn()}
-        onCancel={jest.fn()}
+        onVote={vi.fn()}
+        onCancel={vi.fn()}
       />
     );
     expect(container.firstChild).toBeNull();

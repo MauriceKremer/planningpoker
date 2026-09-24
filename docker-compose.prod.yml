@@ -22,8 +22,8 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        - REACT_APP_API_URL=https://planningpoker.bytecoder.nl/api
-        - REACT_APP_SOCKET_URL=https://planningpoker.bytecoder.nl
+        - VITE_API_URL=https://planningpoker.bytecoder.nl/api
+        - VITE_SOCKET_URL=https://planningpoker.bytecoder.nl
     container_name: planningpoker-client
     restart: unless-stopped
     volumes:

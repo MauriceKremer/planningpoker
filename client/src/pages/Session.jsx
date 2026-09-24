@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSession } from '../utils/api';
 import { 
@@ -39,7 +39,6 @@ const Session = () => {
   const { sessionClosed, sessionClosedInfo, isFlashing, socket, heartbeatRef } = useSessionSocket({
     sessionId,
     currentUser,
-    session,
     onSessionUpdate: handleSessionUpdate,
     onCurrentUserUpdate: handleCurrentUserUpdate,
   });
@@ -63,7 +62,7 @@ const Session = () => {
         } else {
           setShowUsernamePrompt(true);
         }
-      } catch (error) {
+      } catch {
         setError('Session not found');
       } finally {
         setIsLoading(false);
@@ -102,7 +101,7 @@ const Session = () => {
       }
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
-    } catch (error) {
+    } catch {
       alert('Failed to copy link. Please copy it manually.');
     }
   };
@@ -173,7 +172,6 @@ const Session = () => {
 
   const handleRemoveParticipant = useCallback((targetUserId) => {
     if (socket && currentUser?.isModerator && session?.users[targetUserId]) {
-      // eslint-disable-next-line no-restricted-globals
       if (confirm(`Are you sure you want to remove ${session.users[targetUserId].name} from the session?`)) {
         socket.emit('remove-participant', { sessionId, userId: currentUser.id, targetUserId });
       }
@@ -181,13 +179,12 @@ const Session = () => {
   }, [socket, currentUser, session, sessionId]);
 
   const handleGoHome = useCallback(() => {
-    try { removeUserSession(sessionId); } catch (e) {}
+    try { removeUserSession(sessionId); } catch { /* nothing stored */ }
     navigate('/');
   }, [sessionId, navigate]);
 
   const handleLeaveSession = useCallback(() => {
     if (!socket || !currentUser) return;
-    // eslint-disable-next-line no-restricted-globals
     if (!confirm('Are you sure you want to leave this session?')) return;
     
     if (heartbeatRef.current) {

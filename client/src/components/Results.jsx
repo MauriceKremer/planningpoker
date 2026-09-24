@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Results = React.memo(({ votes, users, cardSet }) => {
+const Results = React.memo(({ votes, cardSet }) => {
   const voteValues = Object.values(votes);
 
   // Create vote distribution including all card values
@@ -13,7 +13,7 @@ const Results = React.memo(({ votes, users, cardSet }) => {
   
   // Count actual votes
   voteValues.forEach(vote => {
-    if (voteDistribution.hasOwnProperty(vote)) {
+    if (Object.hasOwn(voteDistribution, vote)) {
       voteDistribution[vote]++;
     } else {
       // Handle any votes not in the standard set
@@ -22,7 +22,7 @@ const Results = React.memo(({ votes, users, cardSet }) => {
   });
 
   // Sort card values for display - maintain exact card set order
-  const sortedCards = [...cardSet, '☕', '❓'].filter(card => voteDistribution.hasOwnProperty(card));
+  const sortedCards = [...cardSet, '☕', '❓'].filter(card => Object.hasOwn(voteDistribution, card));
 
   return (
     <div className="space-y-2.5">

@@ -1,4 +1,3 @@
-import React from 'react';
 
 const REPO_URL = 'https://github.com/MauriceKremer/planningpoker';
 

@@ -78,7 +78,7 @@ function resolveTheme(themes, date = new Date()) {
   return themes.find((theme) => theme.id === 'default');
 }
 
-module.exports = {
+export {
   parseWindowDate,
   isLeapYear,
   clampFeb29,

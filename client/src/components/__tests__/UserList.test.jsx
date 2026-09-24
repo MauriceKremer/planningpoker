@@ -1,6 +1,6 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 import UserList from '../UserList';
 
 const baseUsers = {
@@ -17,7 +17,7 @@ describe('UserList', () => {
         votes={{}}
         votingComplete={false}
         currentUser={baseUsers['u-1']}
-        onStartVoteOut={jest.fn()}
+        onStartVoteOut={vi.fn()}
       />
     );
 
@@ -31,7 +31,7 @@ describe('UserList', () => {
         votes={{}}
         votingComplete={false}
         currentUser={baseUsers['u-1']}
-        onStartVoteOut={jest.fn()}
+        onStartVoteOut={vi.fn()}
         activeVoteOut={{ targetUserId: 'u-3' }}
       />
     );
@@ -46,7 +46,7 @@ describe('UserList', () => {
         votes={{}}
         votingComplete={false}
         currentUser={baseUsers['u-1']}
-        onStartVoteOut={jest.fn()}
+        onStartVoteOut={vi.fn()}
       />
     );
 
@@ -55,7 +55,7 @@ describe('UserList', () => {
   });
 
   test('calls onStartVoteOut with target user id', () => {
-    const onStartVoteOut = jest.fn();
+    const onStartVoteOut = vi.fn();
     render(
       <UserList
         users={baseUsers}
