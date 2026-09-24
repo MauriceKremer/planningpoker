@@ -1,0 +1,16 @@
+# Planning Poker
+
+> Free online Planning Poker for Agile teams. Real-time story point estimation with Fibonacci and T-shirt cards — no signup, no ads, no tracking.
+
+Planning Poker is a browser-based estimation tool for Scrum and Agile teams. A session host creates a room and shares the link; participants join instantly and vote on story points together in real time. Sessions live only in memory, no accounts are required, and no personal data is collected. Session rooms (/session/) are excluded from crawling because they contain transient team activity.
+
+## Pages
+
+- [Home](https://planningpoker.bytecoder.nl/): Start a new Planning Poker session
+- [About](https://planningpoker.bytecoder.nl/about): How it works, FAQ, privacy policy
+- [Join a session](https://planningpoker.bytecoder.nl/join): Enter a session code to join your team
+
+## For crawlers
+
+- [Sitemap](https://planningpoker.bytecoder.nl/sitemap.xml): List of crawlable pages
+- [robots.txt](https://planningpoker.bytecoder.nl/robots.txt): Crawling rules; session rooms are disallowed

@@ -1,0 +1,47 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Planning Poker",
+    "identifier": "planningpoker.bytecoder.nl",
+    "documentationUrl": "https://planningpoker.bytecoder.nl/llms.txt"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:planningpoker.bytecoder.nl:site:planning-poker",
+      "displayName": "Planning Poker",
+      "type": "text/html",
+      "url": "https://planningpoker.bytecoder.nl/",
+      "description": "Free online Planning Poker web app for Agile teams. Real-time story point estimation with Fibonacci and T-shirt cards; create a session, share the link, vote together. No signup, no ads, no tracking.",
+      "tags": ["planning-poker", "agile", "scrum", "estimation", "story-points", "sprint-planning"],
+      "representativeQueries": [
+        "free online planning poker tool for agile teams",
+        "estimate user stories with fibonacci cards without signup",
+        "real-time scrum poker estimation app with no tracking"
+      ]
+    },
+    {
+      "identifier": "urn:air:planningpoker.bytecoder.nl:site:about",
+      "displayName": "About Planning Poker",
+      "type": "text/html",
+      "url": "https://planningpoker.bytecoder.nl/about",
+      "description": "How Planning Poker works, FAQ, and the privacy policy. Sessions live only in memory; no accounts or personal data are required.",
+      "tags": ["about", "faq", "privacy"]
+    },
+    {
+      "identifier": "urn:air:planningpoker.bytecoder.nl:site:join",
+      "displayName": "Join a session",
+      "type": "text/html",
+      "url": "https://planningpoker.bytecoder.nl/join",
+      "description": "Enter a session code or link to join an existing Planning Poker session as a participant.",
+      "tags": ["join", "session", "participant"]
+    },
+    {
+      "identifier": "urn:air:planningpoker.bytecoder.nl:docs:llms-txt",
+      "displayName": "Agent documentation (llms.txt)",
+      "type": "text/markdown",
+      "url": "https://planningpoker.bytecoder.nl/llms.txt",
+      "description": "Markdown overview of this site for AI agents and crawlers: what Planning Poker is, which pages exist, and crawling rules.",
+      "tags": ["documentation", "agents", "llms-txt"]
+    }
+  ]
+}
