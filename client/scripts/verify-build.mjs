@@ -87,11 +87,19 @@ for (const f of htmlFiles) {
   check(!h.includes('%PUBLIC_URL%'), `${f}: no %PUBLIC_URL% placeholder`);
   check(!h.includes('REACT_APP_'), `${f}: no legacy REACT_APP_ references`);
   // Count executable scripts only: JSON-LD blocks are non-executable and
-  // CSP-exempt, the Vite entry is the single external module script.
-  const executableScripts = (h.match(/<script(?![^>]*type="application\/ld\+json")[^>]*>/g) || []);
+  // CSP-exempt, the Vite entry is the single external module script. Both
+  // patterns are case-insensitive — HTML tag names are case-insensitive, and
+  // an uppercase `<SCRIPT …>` block would otherwise slip past both the JSON-LD
+  // strip and the inline-script check (CodeQL js/bad-tag-filter,
+  // js/incomplete-multi-character-sanitization).
+  const executableScripts = (h.match(/<script(?![^>]*type="application\/ld\+json")[^>]*>/gi) || []);
   check(executableScripts.length === 1, `${f}: exactly one executable <script> tag`);
-  check(/<script[^>]+type="module"[^>]+src="\/assets\/[^"]+\.js"/.test(h), `${f}: external module script from /assets/`);
-  check(!/<script[^>]*>[^<]/.test(h.replace(/<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/g, '')), `${f}: no inline executable scripts`);
+  check(/<script[^>]+type="module"[^>]+src="\/assets\/[^"]+\.js"/i.test(h), `${f}: external module script from /assets/`);
+  const jsonLdStripped = h.replace(
+    /<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/gi,
+    ''
+  );
+  check(!/<script[^>]*>[^<]/i.test(jsonLdStripped), `${f}: no inline executable scripts`);
   check(/<html[^>]*data-theme="/.test(h), `${f}: data-theme baked on <html>`);
   check(/<meta name="theme-color" content="[^"]+"/.test(h), `${f}: theme-color meta present`);
   check(!/name="keywords"/.test(h), `${f}: no dead keywords meta tag`);

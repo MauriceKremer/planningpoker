@@ -10,6 +10,19 @@ const { createVoteOut, castVoteOutVote, pruneVoteOutForRemovedUser, expireIfStal
 
 const SPECIAL_VOTES = ['☕', '❓'];
 
+/**
+ * Own-property user lookup for session.user maps.
+ *
+ * Deliberately uses `Object.hasOwn` rather than a truthiness check: a
+ * `__proto__`-shaped key would otherwise resolve to `Object.prototype`
+ * (truthy) and the write that follows would pollute it. Today every event
+ * already rejects such keys via the strict UUID validation
+ * (`socket/validation.js`); this makes the mutation paths independently
+ * safe instead of relying on that (CodeQL js/prototype-polluting-assignment).
+ */
+const getUser = (session, id) =>
+  (Object.hasOwn(session.users, id) ? session.users[id] : null);
+
 // Inactivity countdowns: sessionId → Map<userId, remainingSeconds>
 const inactiveCountdowns = new Map();
 
@@ -117,9 +130,10 @@ const setupSocketEvents = (io, options = {}) => {
         updateLastSeen(sessionId, userId); // Mark heartbeat on join
 
         const session = updateSessionAtomic(sessionId, (session) => {
-          if (!session.users[userId]) throw new Error('User not found in session');
-          session.users[userId].lastSeen = new Date().toISOString();
-          session.users[userId].isOnline = true;
+          const user = getUser(session, userId);
+          if (!user) throw new Error('User not found in session');
+          user.lastSeen = new Date().toISOString();
+          user.isOnline = true;
         });
 
         socket.emit('session-joined', { session: sanitizeSession(session, userId) });
@@ -306,15 +320,17 @@ const setupSocketEvents = (io, options = {}) => {
       try {
         const session = updateSessionAtomic(sessionId, (session) => {
           if (session.moderatorId !== currentModeratorId) throw new Error('Only the current moderator can transfer moderator role');
-          const targetUser = session.users[targetUserId];
+          const targetUser = getUser(session, targetUserId);
           if (!targetUser) throw new Error('Target user not found');
           if (!targetUser.isOnline) throw new Error('Cannot transfer moderator role to offline user');
           if (currentModeratorId === targetUserId) throw new Error('Cannot transfer moderator role to yourself');
+          const moderator = getUser(session, currentModeratorId);
+          if (!moderator) throw new Error('Moderator not found in session');
 
           session.moderator = targetUser.name;
           session.moderatorId = targetUserId;
-          session.users[currentModeratorId].isModerator = false;
-          session.users[targetUserId].isModerator = true;
+          moderator.isModerator = false;
+          targetUser.isModerator = true;
         });
 
         io.to(sessionId).emit('moderator-changed',
@@ -378,15 +394,16 @@ const setupSocketEvents = (io, options = {}) => {
       try {
         let oldName;
         const session = updateSessionAtomic(sessionId, (session) => {
-          if (!session.users[userId]) throw new Error('User not found in session');
+          const user = getUser(session, userId);
+          if (!user) throw new Error('User not found in session');
           if (!newName || newName.trim().length === 0) throw new Error('Name cannot be empty');
           if (newName.trim().length > 30) throw new Error('Name is too long (max 30 characters)');
 
           const nameExists = Object.values(session.users).some(u => u.id !== userId && u.name.toLowerCase() === newName.trim().toLowerCase());
           if (nameExists) throw new Error('This name is already taken by another participant');
 
-          oldName = session.users[userId].name;
-          session.users[userId].name = newName.trim();
+          oldName = user.name;
+          user.name = newName.trim();
           if (session.moderatorId === userId) session.moderator = newName.trim();
         });
 
@@ -650,13 +667,14 @@ const setupSocketEvents = (io, options = {}) => {
       let userStillExists = true;
       try {
         const session = updateSessionAtomic(sessionId, (session) => {
-          if (!session.users[userId]) {
+          const user = getUser(session, userId);
+          if (!user) {
             userStillExists = false;
             return false; // user already removed, skip persist
           }
 
-          session.users[userId].isOnline = false;
-          session.users[userId].lastSeen = new Date().toISOString();
+          user.isOnline = false;
+          user.lastSeen = new Date().toISOString();
 
           // The moderator's role is NOT transferred immediately: brief
           // disconnects (refresh, network blip) get a grace window. If the

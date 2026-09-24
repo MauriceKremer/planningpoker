@@ -65,9 +65,12 @@ function renderHead(head) {
   // remove exactly these on mount (React 19 + react-helmet-async 3.0 no longer
   // add their own `data-rh` marker, so the old `:not([data-rh])` heuristic can
   // no longer tell the pre-rendered tags apart from React's). The marker goes
-  // at the end of the opening tag so tag-prefix checks stay readable.
+  // at the end of the opening tag so tag-prefix checks stay readable. The
+  // `i` flag is deliberate: HTML tag names are case-insensitive, and a
+  // `<SCRIPT>` variant would otherwise slip past the marker (CodeQL
+  // js/bad-tag-filter).
   const marked = head.replace(
-    /<(title|meta|link|script)\b([^>]*?)(\/?)>/g,
+    /<(title|meta|link|script)\b([^>]*?)(\/?)>/gi,
     '<$1$2 data-prerender="true"$3>'
   );
   return `\n    ${marked}\n    `;

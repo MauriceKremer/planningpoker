@@ -8,6 +8,15 @@ const STORAGE_KEYS = {
 // Session expiry time - matches server session cleanup behavior (24 hours)
 const SESSION_EXPIRY = 24 * 60 * 60 * 1000;
 
+// Mirror of the server's SESSION_ID_PATTERN (server/src/socket/validation.js).
+// Session IDs are always 8-char uppercase alphanumeric codes issued by the
+// server, so anything else never belongs in storage — and in particular a
+// `__proto__`-shaped key would corrupt the sessions object's prototype chain
+// instead of indexing a stored entry (CodeQL js/prototype-polluting-assignment).
+const SESSION_ID_PATTERN = /^[A-Z0-9]{8}$/;
+const isValidSessionId = (sessionId) =>
+  typeof sessionId === 'string' && SESSION_ID_PATTERN.test(sessionId);
+
 /**
  * Check if storage is available
  */
@@ -55,6 +64,10 @@ const cleanupExpiredSessions = () => {
  */
 export const saveUserSession = (sessionId, userData) => {
   try {
+    if (!isValidSessionId(sessionId)) {
+      console.warn('Refusing to save session with invalid session ID');
+      return false;
+    }
     if (!isStorageAvailable('localStorage')) {
       console.warn('localStorage not available, session will not persist');
       return false;
@@ -86,6 +99,7 @@ export const saveUserSession = (sessionId, userData) => {
  */
 export const getUserSession = (sessionId) => {
   try {
+    if (!isValidSessionId(sessionId)) return null;
     if (!isStorageAvailable('localStorage')) return null;
     
     cleanupExpiredSessions();
@@ -94,7 +108,9 @@ export const getUserSession = (sessionId) => {
     if (!sessionsData) return null;
     
     const sessions = JSON.parse(sessionsData);
-    const sessionData = sessions[sessionId];
+    // Own-property lookup: `sessions['__proto__']` would resolve to
+    // Object.prototype and the lastAccess write below would pollute it.
+    const sessionData = Object.hasOwn(sessions, sessionId) ? sessions[sessionId] : null;
     
     if (!sessionData) return null;
     
@@ -125,6 +141,7 @@ export const getUserSession = (sessionId) => {
  */
 export const removeUserSession = (sessionId) => {
   try {
+    if (!isValidSessionId(sessionId)) return;
     if (!isStorageAvailable('localStorage')) return;
     
     const sessionsData = localStorage.getItem(STORAGE_KEYS.USER_SESSIONS);
