@@ -5,21 +5,23 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#3E2723" />
-    
-    <!-- Primary Meta Tags -->
+
+    <!--
+      Route-specific meta. scripts/prerender.mjs (M3) replaces everything
+      between the sentinels with the pre-rendered route's react-helmet-async
+      output, so /, /about and /join each ship their own title, description,
+      robots and canonical in the raw HTML (crawlers don't run JavaScript).
+      Keep the sentinels in place.
+    -->
+    <!-- seo:start -->
     <title>Free Online Planning Poker – No Signup, No Ads, No Tracking</title>
     <meta name="title" content="Free Online Planning Poker – No Signup, No Ads, No Tracking" />
     <meta name="description" content="Free real-time Planning Poker for Agile teams. No signup, no ads, no tracking. Estimate with Fibonacci & T-shirt cards." />
     <meta name="keywords" content="planning poker, agile estimation, scrum poker, story points, agile tools, remote estimation, fibonacci estimation, scrum tools, sprint planning, team estimation, planning poker no signup, planning poker no ads, privacy first planning poker" />
-    <meta name="author" content="Planning Poker" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://planningpoker.bytecoder.nl/" />
 
-    <!-- Agentic Resource Discovery manifest (ARD) -->
-    <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
-    
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
     <meta property="og:url" content="https://planningpoker.bytecoder.nl/" />
     <meta property="og:title" content="Free Online Planning Poker – No Signup, No Ads, No Tracking" />
     <meta property="og:description" content="Free real-time Planning Poker for Agile teams. No signup, no ads, no tracking. Estimate with Fibonacci & T-shirt cards." />
@@ -27,17 +29,25 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Playful Planning Poker cards over a warm seasonal backdrop" />
-    <meta property="og:site_name" content="Planning Poker" />
-    <meta property="og:locale" content="en_US" />
-    
+
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://planningpoker.bytecoder.nl/" />
     <meta property="twitter:title" content="Free Online Planning Poker – No Signup, No Ads, No Tracking" />
     <meta property="twitter:description" content="Free real-time Planning Poker for Agile teams. No signup, no ads, no tracking. Estimate with Fibonacci & T-shirt cards." />
     <meta property="twitter:image" content="https://planningpoker.bytecoder.nl/images/twitter-card.jpg?v=autumn-2026" />
     <meta property="twitter:image:alt" content="Playful Planning Poker cards over a warm seasonal backdrop" />
-    
+    <!-- seo:end -->
+
+    <!-- Site-level meta (identical on every route) -->
+    <meta name="author" content="Planning Poker" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Planning Poker" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="twitter:card" content="summary_large_image" />
+
+    <!-- Agentic Resource Discovery manifest (ARD) -->
+    <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
+
     <!-- Additional SEO -->
     <meta name="application-name" content="Planning Poker" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -45,7 +55,7 @@
     <meta name="apple-mobile-web-app-title" content="Planning Poker" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="mobile-web-app-capable" content="yes" />
-    
+
     <!-- Schema.org structured data -->
     <script type="application/ld+json">
     {
@@ -79,12 +89,16 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app. Planning Poker is a free, privacy-first estimation tool for Agile teams — no signup, no ads, no tracking.</noscript>
-    <div id="root">
-      <!-- Static H1 for SEO/crawlers: removed automatically once React renders into #root -->
-      <h1 style="max-width: 40rem; margin: 2rem auto; padding: 0 1rem; text-align: center; font-family: system-ui, sans-serif; color: #3E2723;">
-        Free Online Planning Poker for Agile Teams — No Signup, No Ads, No Tracking
-      </h1>
-    </div>
+    <div id="root"><!-- prerender:start -->
+      <!--
+        Fallback for the pure-SPA shell (build/app.html: /session/* and unknown
+        routes). The public pages are replaced by scripts/prerender.mjs with
+        fully pre-rendered HTML; React replaces whatever is here on mount.
+      -->
+      <p style="max-width: 40rem; margin: 2rem auto; padding: 0 1rem; text-align: center; font-family: system-ui, sans-serif; color: #3E2723;">
+        Loading Planning Poker…
+      </p>
+    <!-- prerender:end --></div>
 
     <!-- Vite entry module (CRA injected this automatically; Vite requires it in the HTML) -->
     <script type="module" src="/src/index.jsx"></script>

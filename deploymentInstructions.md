@@ -254,7 +254,18 @@ Google Search Console and Bing Webmaster Tools (search metrics, not user trackin
   `client/public/bfa87b38920120de07dac246e7b3f69d.txt` is already deployed.
 
 ### After each deploy that changes public pages
-Ping IndexNow so Bing picks up changed URLs immediately:
+`deploy.sh` now submits every URL in `client/public/sitemap.xml` to IndexNow
+automatically (best-effort; it never fails the deploy). Run it by hand when you
+deploy another way, or to inspect the payload:
+
+```bash
+node scripts/indexnow.mjs            # submit sitemap URLs
+node scripts/indexnow.mjs --dry-run  # print the payload, send nothing
+```
+
+Skip the automatic ping with `SKIP_INDEXNOW=1 ./deploy.sh`.
+
+Manual fallback (still works):
 
 ```bash
 curl -s "https://api.indexnow.org/indexnow?url=https://planningpoker.bytecoder.nl/&key=bfa87b38920120de07dac246e7b3f69d&urlFormat=text"

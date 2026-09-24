@@ -25,6 +25,11 @@ const STATIC_DUPLICATE_SELECTORS = [
   'meta[property="og:image:height"]:not([data-rh])',
   'meta[property="og:image:alt"]:not([data-rh])',
   'meta[property^="twitter:"]:not([data-rh])',
+  // Structured data injected by the M3 pre-render (e.g. the About FAQPage):
+  // react-helmet-async re-renders it on mount, so the static copy is removed
+  // to avoid two JSON-LD blocks in the live DOM. Site-level JSON-LD that ships
+  // only in index.html carries no data-prerender marker and is kept.
+  'script[type="application/ld+json"][data-prerender]',
 ];
 
 // Static fallbacks only exist once in the initial HTML, so a single cleanup per
@@ -67,7 +72,7 @@ const SEO = ({
       <meta name="title" content={title} />
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
-      {noindex && <meta name="robots" content="noindex, nofollow" />}
+      <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
       <link rel="canonical" href={url} />
 
       {/* Open Graph / Facebook */}

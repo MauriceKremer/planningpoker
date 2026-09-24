@@ -32,19 +32,45 @@ test.describe('Public pages', () => {
 });
 
 test.describe('Non-JS crawler parity (raw HTML, JavaScriptEnabled: false)', () => {
-  // These tests assert exactly what a crawler that does NOT execute JavaScript
-  // (GPTBot, ClaudeBot, PerplexityBot, …) can see today. M3 (pre-render) will
-  // extend these assertions with full FAQ content.
+  // These tests assert what a crawler that does NOT execute JavaScript
+  // (GPTBot, ClaudeBot, PerplexityBot, …) sees. M3 pre-renders /, /about and
+  // /join to full static HTML; /session/* gets the noindex SPA shell.
   test.use({ javaScriptEnabled: false });
 
-  test('raw HTML exposes title, H1, meta description and JSON-LD', async ({ page }) => {
+  test('home raw HTML exposes title, H1, meta description and JSON-LD', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Planning Poker/i);
     await expect(page.locator('#root h1')).toContainText(/Free Online Planning Poker/i);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /Planning Poker/i);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index, follow');
     await expect(page.locator('script[type="application/ld+json"]')).toBeAttached();
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /https:\/\/planningpoker\.bytecoder\.nl/);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /https:\/\/planningpoker\.bytecoder\.nl\/$/);
     await expect(page.locator('link[rel="ai-catalog"]')).toBeAttached();
+  });
+
+  test('about raw HTML exposes the full guide, privacy policy and FAQ schema', async ({ page }) => {
+    await page.goto('/about');
+    await expect(page).toHaveTitle(/About Planning Poker/i);
+    await expect(page.locator('#root h1')).toContainText(/User Guide/i);
+    await expect(page.locator('#root')).toContainText('User Manual');
+    await expect(page.locator('#root')).toContainText('Data Collected');
+    await expect(page.locator('#root')).toContainText('Is Planning Poker really free?');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /https:\/\/planningpoker\.bytecoder\.nl\/about$/);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index, follow');
+    expect(await page.content()).toContain('"@type":"FAQPage"');
+  });
+
+  test('join raw HTML exposes the form heading and per-route meta', async ({ page }) => {
+    await page.goto('/join');
+    await expect(page).toHaveTitle(/Join a Planning Poker Session/i);
+    await expect(page.locator('#root h1')).toContainText(/Join a Planning Poker Session/i);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /https:\/\/planningpoker\.bytecoder\.nl\/join$/);
+  });
+
+  test('session routes get the noindex SPA shell, not public content', async ({ page }) => {
+    await page.goto('/session/AAAAAAAA');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
+    await expect(page.locator('#root')).not.toContainText('User Manual');
   });
 
   test('raw HTML ships the discovery files referenced by the contract', async ({ page }) => {

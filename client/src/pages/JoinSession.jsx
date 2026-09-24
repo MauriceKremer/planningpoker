@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { joinSession } from '../utils/api';
 import { saveUserSession } from '../utils/sessionStorage';
+import SEO from '../components/SEO';
 
 const JoinSession = () => {
   const navigate = useNavigate();
@@ -54,6 +55,13 @@ const JoinSession = () => {
 
 
   return (
+    <>
+      <SEO
+        title="Join a Planning Poker Session - Enter a Session Code"
+        description="Join an existing Planning Poker session with a session code. No signup, no ads, no tracking — estimate story points with your Agile team in real time."
+        keywords="join planning poker session, planning poker session code, scrum poker join, agile estimation session"
+        url="https://planningpoker.bytecoder.nl/join"
+      />
     <div className="max-w-md mx-auto card-lg p-5">
       <h1 className="text-xl font-bold text-center text-mocha-800 mb-5">Join a Planning Poker Session</h1>
       
@@ -113,6 +121,7 @@ const JoinSession = () => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 

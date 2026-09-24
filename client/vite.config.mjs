@@ -21,6 +21,12 @@ export default defineConfig({
     // Keep port 3000: dev-setup.sh and server .env point clients at it.
     port: 3000,
   },
+  // react-helmet-async is CommonJS; without noExternal Vite's SSR module
+  // runner cannot statically resolve its named exports during the M3
+  // pre-render (scripts/prerender.mjs).
+  ssr: {
+    noExternal: ['react-helmet-async'],
+  },
   test: {
     environment: 'jsdom',
     // globals: true is required by @testing-library/react's automatic

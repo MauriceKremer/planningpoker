@@ -143,6 +143,15 @@ echo "  🛑 Stop all: docker compose -f docker-compose.prod.yml down"
 echo "  🔄 Restart: docker compose -f docker-compose.prod.yml restart"
 echo ""
 
+# M3: instantly notify IndexNow (Bing/Seznam) about the public pages.
+# Best-effort by design — an indexing ping must never fail a deploy. Skip with
+# SKIP_INDEXNOW=1.
+if [[ "${SKIP_INDEXNOW:-}" != "1" ]] && command_exists node; then
+    echo -e "${BLUE}📡 Submitting sitemap URLs to IndexNow...${NC}"
+    node scripts/indexnow.mjs || echo -e "${YELLOW}⚠️  IndexNow submission failed (non-fatal)${NC}"
+    echo ""
+fi
+
 # Final health status
 if [ "$nginx_healthy" = true ] && [ "$api_healthy" = true ]; then
     echo -e "${GREEN}🚀 All services are healthy and ready!${NC}"

@@ -84,10 +84,12 @@ const About = () => {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content — both panels are always rendered and toggled with the
+          `hidden` attribute rather than mounted/unmounted. Non-JS crawlers
+          (and the M3 pre-render) then see the full manual AND privacy policy,
+          not just the tab that happens to be active. */}
       <div className="p-5">
-        {activeTab === 'manual' && (
-          <div className="prose max-w-none">
+        <div className="prose max-w-none" hidden={activeTab !== 'manual'}>
             <h2 className="text-2xl font-bold mb-4">User Manual</h2>
             
             <section className="mb-6">
@@ -212,11 +214,9 @@ const About = () => {
                 ← Back to Home
               </button>
             </div>
-          </div>
-        )}
+        </div>
 
-        {activeTab === 'privacy' && (
-          <div className="prose max-w-none">
+        <div className="prose max-w-none" hidden={activeTab !== 'privacy'}>
             <h2 className="text-2xl font-bold mb-4">Privacy Policy</h2>
             <p className="text-sm text-mocha-400 mb-5"><strong>Last Updated: 21 September 2026</strong></p>
 
@@ -509,8 +509,7 @@ const About = () => {
                 ← Back to Home
               </button>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* FAQ — always visible at the bottom of the About page, regardless of tab */}
         <section className="mt-2 mb-6">
