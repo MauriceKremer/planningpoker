@@ -4,35 +4,43 @@ import { renderToString } from 'react-dom/server';
 import { AppShell } from '../App';
 
 /**
- * Build-time pre-render entry (migration_plan.md M3).
+ * Build-time pre-render entry (migration_plan.md M3, reworked for React 19 in M4).
  *
- * Loaded by scripts/prerender.mjs through Vite's `ssrLoadModule`, so JSX and
- * the app's ESM imports (themes.json, CSS-free component tree) resolve exactly
- * as they do in the browser bundle. The result is static HTML for crawlers that
- * do not execute JavaScript (GPTBot, ClaudeBot, PerplexityBot, …); the SPA
- * still owns the page once its bundle runs.
+ * Loaded by scripts/prerender.mjs through Vite's `ssrLoadModule` and rendered
+ * once per public route. Non-JS crawlers (GPTBot, ClaudeBot, PerplexityBot, …)
+ * then see real content; the SPA still owns the page once its bundle runs.
+ *
+ * React 19 hoists `<title>`/`<meta>`/`<link>` rendered anywhere in the tree to
+ * the front of the `renderToString` output, and react-helmet-async 3.0 relies
+ * on exactly that (under React 19 it no longer fills an SSR `context.helmet`).
+ * So the head is split off the front of the stream rather than read from a
+ * context object. Non-async `<script>` metadata (the About FAQPage JSON-LD) is
+ * deliberately NOT hoisted and stays inline in the body, which is valid JSON-LD
+ * placement — React clears that body copy when it mounts.
  *
  * @param {string} url Route to render, e.g. '/' or '/about'.
- * @returns {{ html: string, head: { title: string, meta: string, link: string, script: string } }}
+ * @returns {{ head: string, body: string }}
  */
+const LEADING_HEAD_TAG =
+  /^(<title[\s\S]*?<\/title>|<meta\b[^>]*\/?>|<link\b[^>]*\/?>|<script\b[^>]*>[\s\S]*?<\/script>)/;
+
 export function render(url) {
-  const helmetContext = {};
   const html = renderToString(
-    <HelmetProvider context={helmetContext}>
+    <HelmetProvider>
       <StaticRouter location={url}>
         <AppShell />
       </StaticRouter>
     </HelmetProvider>
   );
 
-  const { helmet } = helmetContext;
-  return {
-    html,
-    head: {
-      title: helmet.title.toString(),
-      meta: helmet.meta.toString(),
-      link: helmet.link.toString(),
-      script: helmet.script.toString(),
-    },
-  };
+  let rest = html;
+  let head = '';
+  for (;;) {
+    const match = rest.match(LEADING_HEAD_TAG);
+    if (!match) break;
+    head += match[1];
+    rest = rest.slice(match[1].length);
+  }
+
+  return { head, body: rest };
 }

@@ -87,19 +87,21 @@ for (const f of htmlFiles) {
   check(!/<script[^>]*>[^<]/.test(h.replace(/<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/g, '')), `${f}: no inline executable scripts`);
   check(/<html[^>]*data-theme="/.test(h), `${f}: data-theme baked on <html>`);
   check(/<meta name="theme-color" content="[^"]+"/.test(h), `${f}: theme-color meta present`);
+  check(!/name="keywords"/.test(h), `${f}: no dead keywords meta tag`);
+  check(/data-prerender="true"/.test(h), `${f}: pre-rendered head tagged for runtime cleanup`);
   check(/<link rel="icon" href="\/favicon\.svg"/.test(h), `${f}: SVG favicon referenced`);
   check(/<link rel="ai-catalog"/.test(h), `${f}: ai-catalog link tag present`);
   check(/type="application\/ld\+json"/.test(h), `${f}: JSON-LD structured data present`);
 }
 
 // 3. M3 pre-render contract — per-route content and meta in the raw HTML.
-check(/<title>Free Online Planning Poker/.test(html['index.html'] || ''), 'home: route title baked in');
+check(/<title[^>]*>Free Online Planning Poker/.test(html['index.html'] || ''), 'home: route title baked in');
 check(/<link rel="canonical" href="https:\/\/planningpoker\.bytecoder\.nl\/"/.test(html['index.html'] || ''), 'home: canonical / baked in');
 check(/<meta name="robots" content="index, follow"/.test(html['index.html'] || ''), 'home: robots index,follow baked in');
 check(/Free Online Planning Poker for Agile Teams/.test(html['index.html'] || ''), 'home: rendered H1 content present');
 
 const about = html['about/index.html'] || '';
-check(/<title>About Planning Poker/.test(about), 'about: route title baked in');
+check(/<title[^>]*>About Planning Poker/.test(about), 'about: route title baked in');
 check(/<link rel="canonical" href="https:\/\/planningpoker\.bytecoder\.nl\/about"/.test(about), 'about: canonical /about baked in');
 check(/<meta name="robots" content="index, follow"/.test(about), 'about: robots index,follow baked in');
 check(about.includes('User Manual') && about.includes('Data Collected'), 'about: full manual + privacy content present');
@@ -107,7 +109,7 @@ check(/Is Planning Poker really free\?/.test(about), 'about: FAQ content present
 check(/"@type":"FAQPage"/.test(about), 'about: FAQPage JSON-LD present');
 
 const joinHtml = html['join/index.html'] || '';
-check(/<title>Join a Planning Poker Session/.test(joinHtml), 'join: route title baked in');
+check(/<title[^>]*>Join a Planning Poker Session/.test(joinHtml), 'join: route title baked in');
 check(/<link rel="canonical" href="https:\/\/planningpoker\.bytecoder\.nl\/join"/.test(joinHtml), 'join: canonical /join baked in');
 check(/<meta name="robots" content="index, follow"/.test(joinHtml), 'join: robots index,follow baked in');
 check(joinHtml.includes('Join a Planning Poker Session'), 'join: rendered heading content present');

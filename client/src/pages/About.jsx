@@ -42,7 +42,6 @@ const About = () => {
       <SEO 
         title="About Planning Poker - User Guide & Privacy Policy"
         description="Learn how to use Planning Poker for Agile estimation. Free user manual, privacy policy, and tips for effective remote sprint planning."
-        keywords="planning poker guide, agile estimation tutorial, scrum poker how to, planning poker privacy"
         url="https://planningpoker.bytecoder.nl/about"
       />
       <Helmet>

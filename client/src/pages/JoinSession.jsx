@@ -59,7 +59,6 @@ const JoinSession = () => {
       <SEO
         title="Join a Planning Poker Session - Enter a Session Code"
         description="Join an existing Planning Poker session with a session code. No signup, no ads, no tracking — estimate story points with your Agile team in real time."
-        keywords="join planning poker session, planning poker session code, scrum poker join, agile estimation session"
         url="https://planningpoker.bytecoder.nl/join"
       />
     <div className="max-w-md mx-auto card-lg p-5">

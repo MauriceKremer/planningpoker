@@ -3,45 +3,25 @@ import { Helmet } from 'react-helmet-async';
 import { useActiveTheme } from '../theme/themes';
 
 /**
- * public/index.html ships a static set of SEO meta tags as a fallback for
- * crawlers and link-unfurlers that don't execute JavaScript (WhatsApp, Slack,
- * Discord, iMessage preview bots). react-helmet-async only manages the tags it
- * renders itself (marked with data-rh="true"), so those static fallbacks are
- * never removed on its own. Once React has mounted we must delete them, or the
- * DOM ends up with two of every SEO tag (e.g. two meta descriptions), which
- * search engines like Bing flag as an error.
+ * The build-time pre-render (scripts/prerender.mjs, M3) bakes route-specific
+ * meta into the served HTML for crawlers and link-unfurlers that don't execute
+ * JavaScript (GPTBot, WhatsApp, Slack, Discord, iMessage). Every tag it injects
+ * carries `data-prerender="true"` (see `renderHead` there). React 19 hoists its
+ * own copies on mount (react-helmet-async 3.0 renders them as JSX — it no longer
+ * uses the old `data-rh` marker), so the static copies must be removed or the
+ * DOM ends up with two of every SEO tag, which search engines like Bing flag as
+ * an error. Targeting only the marker leaves React's own tags intact.
  */
-const STATIC_DUPLICATE_SELECTORS = [
-  'meta[name="description"]:not([data-rh])',
-  'meta[name="title"]:not([data-rh])',
-  'meta[name="keywords"]:not([data-rh])',
-  'meta[name="robots"]:not([data-rh])',
-  'link[rel="canonical"]:not([data-rh])',
-  'meta[property="og:url"]:not([data-rh])',
-  'meta[property="og:title"]:not([data-rh])',
-  'meta[property="og:description"]:not([data-rh])',
-  'meta[property="og:image"]:not([data-rh])',
-  'meta[property="og:image:width"]:not([data-rh])',
-  'meta[property="og:image:height"]:not([data-rh])',
-  'meta[property="og:image:alt"]:not([data-rh])',
-  'meta[property^="twitter:"]:not([data-rh])',
-  // Structured data injected by the M3 pre-render (e.g. the About FAQPage):
-  // react-helmet-async re-renders it on mount, so the static copy is removed
-  // to avoid two JSON-LD blocks in the live DOM. Site-level JSON-LD that ships
-  // only in index.html carries no data-prerender marker and is kept.
-  'script[type="application/ld+json"][data-prerender]',
-];
+const PRERENDERED_SELECTOR = '[data-prerender]';
 
-// Static fallbacks only exist once in the initial HTML, so a single cleanup per
+// Pre-rendered tags only exist once in the initial HTML, so a single cleanup per
 // page load is enough (module-level flag, not per-component state).
 let staticFallbacksRemoved = false;
 
 const removeStaticFallbacks = () => {
   if (staticFallbacksRemoved) return;
   staticFallbacksRemoved = true;
-  STATIC_DUPLICATE_SELECTORS.forEach((selector) => {
-    document.head.querySelectorAll(selector).forEach((el) => el.remove());
-  });
+  document.head.querySelectorAll(PRERENDERED_SELECTOR).forEach((el) => el.remove());
 };
 
 /**
@@ -52,7 +32,6 @@ const removeStaticFallbacks = () => {
 const SEO = ({
   title = 'Free Online Planning Poker – No Signup, No Ads, No Tracking',
   description = 'Free real-time Planning Poker for Agile teams. No signup, no ads, no tracking. Estimate with Fibonacci & T-shirt cards.',
-  keywords = 'planning poker, agile estimation, scrum poker, story points, agile tools, planning poker no signup, planning poker no ads, privacy first planning poker',
   ogImage,
   url = 'https://planningpoker.bytecoder.nl/',
   noindex = false
@@ -71,7 +50,6 @@ const SEO = ({
       <title>{title}</title>
       <meta name="title" content={title} />
       <meta name="description" content={description} />
-      <meta name="keywords" content={keywords} />
       <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
       <link rel="canonical" href={url} />
 

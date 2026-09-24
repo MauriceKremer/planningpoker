@@ -46,12 +46,10 @@ const ROUTES = [
 // Generic head for the pure-SPA shell. Session rooms and unknown routes must
 // never be indexed (robots.txt already disallows /session/), and their real
 // meta is managed at runtime by react-helmet-async.
-const SHELL_HEAD = {
-  title: '<title>Planning Poker Session</title>',
-  meta: '<meta name="description" content="A live Planning Poker estimation session." />\n<meta name="robots" content="noindex, nofollow" />',
-  link: '',
-  script: '',
-};
+const SHELL_HEAD =
+  '<title>Planning Poker Session</title>' +
+  '<meta name="description" content="A live Planning Poker estimation session." />' +
+  '<meta name="robots" content="noindex, nofollow" />';
 
 function injectBetween(html, start, end, content) {
   const startIdx = html.indexOf(start);
@@ -62,24 +60,17 @@ function injectBetween(html, start, end, content) {
   return html.slice(0, startIdx + start.length) + content + html.slice(endIdx);
 }
 
-function stripHelmetMarkers(markup) {
-  return markup
-    .replace(/\sdata-rh="true"/g, '')
-    .replace(/\sdata-react-helmet="true"/g, '')
-    .trim();
-}
-
 function renderHead(head) {
-  const parts = [
-    stripHelmetMarkers(head.title),
-    stripHelmetMarkers(head.meta),
-    stripHelmetMarkers(head.link),
-    // Tag the pre-rendered structured-data script so components/SEO.jsx can
-    // remove it on mount — react-helmet-async re-renders it (with data-rh),
-    // and without the marker the live DOM would carry two FAQPage blocks.
-    stripHelmetMarkers(head.script).replace(/<script\b/g, '<script data-prerender="true"'),
-  ].filter(Boolean);
-  return `\n    ${parts.join('\n    ')}\n    `;
+  // Append a marker to every injected opening tag so components/SEO.jsx can
+  // remove exactly these on mount (React 19 + react-helmet-async 3.0 no longer
+  // add their own `data-rh` marker, so the old `:not([data-rh])` heuristic can
+  // no longer tell the pre-rendered tags apart from React's). The marker goes
+  // at the end of the opening tag so tag-prefix checks stay readable.
+  const marked = head.replace(
+    /<(title|meta|link|script)\b([^>]*?)(\/?)>/g,
+    '<$1$2 data-prerender="true"$3>'
+  );
+  return `\n    ${marked}\n    `;
 }
 
 function buildPage(template, { head, body }) {
@@ -107,8 +98,8 @@ try {
   const { render } = await vite.ssrLoadModule('/src/prerender/entry-server.jsx');
 
   for (const route of ROUTES) {
-    const { html, head } = render(route.url);
-    const page = buildPage(template, { head, body: html });
+    const { head, body } = render(route.url);
+    const page = buildPage(template, { head, body });
     const outPath = join(build, route.out);
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(outPath, page);
