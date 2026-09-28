@@ -33,7 +33,7 @@ test.describe('Public pages', () => {
 
 test.describe('Non-JS crawler parity (raw HTML, JavaScriptEnabled: false)', () => {
   // These tests assert what a crawler that does NOT execute JavaScript
-  // (GPTBot, ClaudeBot, PerplexityBot, …) sees. M3 pre-renders /, /about and
+  // (GPTBot, ClaudeBot, PerplexityBot, …) sees. The build pre-renders /, /about and
   // /join to full static HTML; /session/* gets the noindex SPA shell.
   test.use({ javaScriptEnabled: false });
 

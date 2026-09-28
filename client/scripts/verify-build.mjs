@@ -12,13 +12,13 @@
  *     prevent).
  *  2. Every HTML entry point is CSP-safe: exactly one external module script,
  *     zero inline executables, zero %PUBLIC_URL% leftovers, season baked in.
- *  3. The M3 pre-render actually ran: /, /about and /join each have their own
+ *  3. The pre-render actually ran: /, /about and /join each have their own
  *     file with route-specific canonical/robots/title and real content
  *     (About additionally the FAQPage JSON-LD); app.html is the noindex SPA
  *     shell for /session/*.
  *  4. Every asset referenced by index.html exists on disk.
  *  5. Every image referenced by themes.json exists in build/images/.
- *  6. The M7 PWA output: manifest.webmanifest is valid and complete
+ *  6. The PWA output: manifest.webmanifest is valid and complete
  *     (installability members + icons on disk), sw.js exists, is
  *     self-contained (no cross-origin importScripts) and its precache
  *     manifest references only files that actually exist in build/.
@@ -31,16 +31,13 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 // Frozen ceiling for the main JS bundle (gzip).
-//
-// M4: React 19 raised it ~24% (98.9 -> 122.3 kB gzip); frozen just above that
-// baseline at 128 kB.
-//
-// M5: 150.3 kB — the typed socket protocol layer added `zod` (shared contract
-// schemas, validated on both sides) and restored the socket layer behind the
-// typed `useSessionSocket`. The growth is the contract dependency itself, not
-// accidental bloat (zod/mini or route-level chunking can reclaim it later);
-// real chunking / critical CSS is M6 work, so the ceiling is re-frozen at
-// 160 kB with that context.
+// The JS-growth context for the frozen ceiling:
+// - React 19 raised it ~24% (98.9 -> 122.3 kB gzip); frozen just above at 128 kB.
+// - The typed socket protocol layer added `zod` (shared contract schemas,
+//   validated on both sides) and restored the socket layer behind the typed
+//   `useSessionSocket`: 150.3 kB. The growth is the contract dependency itself,
+//   not accidental bloat; zod/mini or route-level chunking can reclaim it later.
+// Re-frozen at 160 kB until that chunking lands.
 const MAX_JS_GZIP_BYTES = 160000;
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -132,7 +129,7 @@ for (const f of htmlFiles) {
   check(/type="application\/ld\+json"/.test(h), `${f}: JSON-LD structured data present`);
 }
 
-// 3. M3 pre-render contract — per-route content and meta in the raw HTML.
+// 3. Pre-render contract — per-route content and meta in the raw HTML.
 check(/<title[^>]*>Free Online Planning Poker/.test(html['index.html'] || ''), 'home: route title baked in');
 check(/<link rel="canonical" href="https:\/\/planningpoker\.bytecoder\.nl\/"/.test(html['index.html'] || ''), 'home: canonical / baked in');
 check(/<meta name="robots" content="index, follow"/.test(html['index.html'] || ''), 'home: robots index,follow baked in');
@@ -162,7 +159,7 @@ check(Boolean(jsSrc && jsSrc.match(/-[A-Za-z0-9$_-]{8,}\.js$/)), 'bundle filenam
 check(Boolean(jsSrc && existsSync(join(build, jsSrc.slice(1)))), `referenced bundle exists: ${jsSrc}`);
 if (jsSrc && existsSync(join(build, jsSrc.slice(1)))) {
   const gzipBytes = gzipSync(readFileSync(join(build, jsSrc.slice(1)))).length;
-  check(gzipBytes <= MAX_JS_GZIP_BYTES, `bundle gzip ${gzipBytes} B ≤ ${MAX_JS_GZIP_BYTES} B (M4 freeze)`);
+  check(gzipBytes <= MAX_JS_GZIP_BYTES, `bundle gzip ${gzipBytes} B ≤ ${MAX_JS_GZIP_BYTES} B`);
 }
 const cssHref = baseHtml.match(/<link[^>]+rel="stylesheet"[^>]+href="(\/assets\/[^"]+\.css)"/)?.[1];
 check(Boolean(cssHref && existsSync(join(build, cssHref.slice(1)))), `referenced css exists: ${cssHref}`);
@@ -174,7 +171,7 @@ for (const theme of themes) {
   if (file) check(existsSync(join(build, 'images', file)), `theme backdrop present: ${file}`);
 }
 
-// 6. M7 PWA contract — manifest completeness and SW precache integrity.
+// 6. PWA contract — manifest completeness and SW precache integrity.
 const manifestPath = join(build, 'manifest.webmanifest');
 if (existsSync(manifestPath)) {
   try {
@@ -217,7 +214,7 @@ if (existsSync(swPath)) {
   check(/createHandlerBoundToURL\s*\(/.test(sw) && /["']\/?app\.html["']/.test(sw), 'sw.js: navigateFallback binds app.html');
   // SEO guard: /, /about and /join must be denylisted from the navigation
   // fallback, or returning visitors (and JS-running crawlers) would get the
-  // cached noindex shell instead of the M3 pre-rendered HTML from nginx.
+  // cached noindex shell instead of the pre-rendered HTML from nginx.
   check(/denylist:\[[^\]]*about/.test(sw), 'sw.js: navigation fallback denylisted for /, /about, /join');
   // Every precached URL must exist in build/ — an SW precaching a dead URL
   // would 404 offline and leave clients with a broken shell after deploys.

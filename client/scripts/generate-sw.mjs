@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * M7 PWA: precaching Workbox service worker.
+ * Precaching Workbox service worker.
  *
  * Must run AFTER scripts/prerender.mjs — the SW precaches app.html and the
  * pre-rendered pages, which only exist then (a closeBundle-time generation,
@@ -12,7 +12,7 @@
  * importScripts); registration lives in the bundle, not an injected
  * <script>; navigateFallback binds the cached noindex shell for /session/*
  * while /, /about and /join stay denylisted so returning visitors keep the
- * M3 pre-rendered HTML from nginx. The ≈2.2 MB of decorative backdrops and
+ * pre-rendered HTML from nginx. The ≈2.2 MB of decorative backdrops and
  * og-cards are deliberately not precached.
  */
 import { generateSW } from 'workbox-build';

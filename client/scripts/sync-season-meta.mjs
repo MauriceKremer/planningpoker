@@ -3,7 +3,7 @@
  * Sync static index.html meta tags with the currently active seasonal theme.
  *
  * Reads client/src/theme/themes.json, resolves the window for today, then
- * updates client/index.html (project root — Vite's entry HTML since M1):
+ * updates client/index.html (project root — Vite's entry HTML):
  *   - <meta name="theme-color" content="...">
  *   - og:image and twitter:image ?v= cache-buster
  *   - data-theme attribute on <html> (correct palette on first paint, before

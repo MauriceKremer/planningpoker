@@ -13,7 +13,7 @@ import tailwindcss from '@tailwindcss/vite';
 //   (script-src 'self', no unsafe-inline) was verified against that shape —
 //   scripts/verify-build.mjs enforces it on every build.
 //
-// M7 PWA: sw.js is generated AFTER this build by scripts/generate-sw.mjs
+// PWA: sw.js is generated AFTER this build by scripts/generate-sw.mjs
 // (build chain: vite build → prerender → generate-sw) and registered from
 // inside the bundle (src/index.tsx) — no plugin-injected <script>, no CSP
 // change. See generate-sw.mjs for the full constraint list.

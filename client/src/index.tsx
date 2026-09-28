@@ -9,7 +9,7 @@ if (!container) {
   throw new Error('Root element #root not found');
 }
 
-// M7: register the service worker from inside the bundle — an injected
+// The service worker registers from inside the bundle — an injected
 // <script> would break the CSP and the build contract's script inventory.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// M7 — PWA gate. Runs against the real prod stack (nginx serves sw.js and
+// PWA gate. Runs against the real prod stack (nginx serves sw.js and
 // manifest.webmanifest), so these tests also verify the nginx config:
 // the no-cache headers for /sw.js and the correct MIME for the manifest.
 //

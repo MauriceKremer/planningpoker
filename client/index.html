@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#3E2723" />
 
     <!--
-      Route-specific meta. scripts/prerender.mjs (M3) replaces everything
+      Route-specific meta. scripts/prerender.mjs replaces everything
       between the sentinels with the pre-rendered route's react-helmet-async
       output, so /, /about and /join each ship their own title, description,
       robots and canonical in the raw HTML (crawlers don't run JavaScript).
@@ -47,7 +47,7 @@
     <!-- Agentic Resource Discovery manifest (ARD) -->
     <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
 
-    <!-- PWA web app manifest + iOS home-screen icon (M7). The service worker
+    <!-- PWA web app manifest + iOS home-screen icon. The service worker
          itself is registered from the bundle (src/index.tsx) — registration is
          deliberately NOT injected as a separate script tag, because the strict
          CSP allows only external scripts and scripts/verify-build.mjs enforces
