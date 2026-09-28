@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { joinSession } from '../utils/api';
+import { joinSession, RequestError } from '../utils/api';
 import { saveUserSession } from '../utils/sessionStorage';
 import SEO from '../components/SEO';
 
@@ -11,7 +11,7 @@ const JoinSession = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleJoinSession = async (e) => {
+  const handleJoinSession = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -41,10 +41,14 @@ const JoinSession = () => {
 
       // Match on the HTTP status (the stable contract), with the parsed
       // body available on error.data.
-      if (error.status === 409) {
-        setError('This username is already taken. Please choose a different name.');
-      } else if (error.status === 404) {
-        setError('Session not found. Please check the session ID.');
+      if (error instanceof RequestError) {
+        if (error.status === 409) {
+          setError('This username is already taken. Please choose a different name.');
+        } else if (error.status === 404) {
+          setError('Session not found. Please check the session ID.');
+        } else {
+          setError('Failed to join session. Please try again.');
+        }
       } else {
         setError('Failed to join session. Please try again.');
       }

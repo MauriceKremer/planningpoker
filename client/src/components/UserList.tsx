@@ -7,7 +7,7 @@ type ActiveVoteOutState = import('../protocol/events').ActiveVoteOutState;
 interface UserListProps {
   users: Record<string, User>;
   votes: Record<string, string>;
-  votingComplete: boolean;
+  votingComplete?: boolean;
   votedUserIds?: string[];
   currentUser: SessionUser | null;
   onRemoveParticipant?: (userId: string) => void;

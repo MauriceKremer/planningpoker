@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSession } from '../utils/api';
-import { 
-  getUserSession, 
-  saveUserSession, 
+import {
+  getUserSession,
+  saveUserSession,
   removeUserSession
 } from '../utils/sessionStorage';
 import useSessionSocket from '../hooks/useSessionSocket';
 import { stopHeartbeat } from '../utils/socket';
+import type { SessionState, SessionUser, Updater } from '../protocol/session';
 import VotingCards from '../components/VotingCards';
 import UserList from '../components/UserList';
 import Results from '../components/Results';
@@ -18,21 +19,25 @@ import SEO from '../components/SEO';
 import VoteOutBanner from '../components/VoteOutBanner';
 
 const Session = () => {
-  const { sessionId } = useParams();
+  // The route is `/session/:sessionId`, so the param is always present on
+  // anything this page renders; the `?? ''` fallback only routes the
+  // theoretically-possible missing-param case into the API's 404 path.
+  const { sessionId: routeSessionId } = useParams<{ sessionId: string }>();
+  const sessionId = routeSessionId ?? '';
   const navigate = useNavigate();
-  
-  const [session, setSession] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
+
+  const [session, setSession] = useState<SessionState | null>(null);
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showUsernamePrompt, setShowUsernamePrompt] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
   // Stable updaters for the hook
-  const handleSessionUpdate = useCallback((update) => {
+  const handleSessionUpdate = useCallback((update: Updater<SessionState | null>) => {
     setSession(prev => typeof update === 'function' ? update(prev) : update);
   }, []);
-  const handleCurrentUserUpdate = useCallback((update) => {
+  const handleCurrentUserUpdate = useCallback((update: Updater<SessionUser | null>) => {
     setCurrentUser(prev => typeof update === 'function' ? update(prev) : update);
   }, []);
 
@@ -71,7 +76,7 @@ const Session = () => {
     loadSession();
   }, [sessionId, currentUser?.id]);
 
-  const handleJoinSuccess = async (user) => {
+  const handleJoinSuccess = async (user: SessionUser) => {
     setCurrentUser(user);
     setShowUsernamePrompt(false);
     saveUserSession(sessionId, { userId: user.id, userName: user.name, isModerator: user.isModerator || false, joinedAt: user.joinedAt });
@@ -106,9 +111,9 @@ const Session = () => {
     }
   };
 
-  const handleVote = useCallback((vote) => {
+  const handleVote = useCallback((vote: string) => {
     if (socket && currentUser) {
-      setSession(prev => ({ ...prev, votes: { ...prev.votes, [currentUser.id]: vote } }));
+      setSession(prev => (prev ? { ...prev, votes: { ...prev.votes, [currentUser.id]: vote } } : prev));
       socket.emit('submit-vote', { sessionId, userId: currentUser.id, vote });
     }
   }, [socket, currentUser, sessionId]);
@@ -131,11 +136,11 @@ const Session = () => {
     if (socket && currentUser?.isModerator) socket.emit('test-sound', { sessionId, userId: currentUser.id });
   }, [socket, currentUser, sessionId]);
 
-  const handleUpdateCardSet = useCallback((cardSet) => {
+  const handleUpdateCardSet = useCallback((cardSet: string[]) => {
     if (socket && currentUser?.isModerator) socket.emit('update-card-set', { sessionId, userId: currentUser.id, cardSet });
   }, [socket, currentUser, sessionId]);
 
-  const handleTransferModerator = useCallback((targetUserId) => {
+  const handleTransferModerator = useCallback((targetUserId: string) => {
     if (socket && currentUser?.isModerator) socket.emit('transfer-moderator', { sessionId, currentModeratorId: currentUser.id, targetUserId });
   }, [socket, currentUser, sessionId]);
 
@@ -143,17 +148,17 @@ const Session = () => {
     if (socket && currentUser?.isModerator) socket.emit('close-session', { sessionId, moderatorId: currentUser.id });
   }, [socket, currentUser, sessionId]);
 
-  const handleUpdateUserName = useCallback((newName) => {
+  const handleUpdateUserName = useCallback((newName: string) => {
     if (socket && currentUser) socket.emit('update-user-name', { sessionId, userId: currentUser.id, newName });
   }, [socket, currentUser, sessionId]);
 
-  const handleStartVoteOut = useCallback((targetUserId) => {
+  const handleStartVoteOut = useCallback((targetUserId: string) => {
     if (socket && currentUser) {
       socket.emit('start-vote-out', { sessionId, userId: currentUser.id, targetUserId });
     }
   }, [socket, currentUser, sessionId]);
 
-  const handleVoteOut = useCallback((vote) => {
+  const handleVoteOut = useCallback((vote: 'yes' | 'no') => {
     if (socket && currentUser && session?.activeVoteOut) {
       socket.emit('vote-out', {
         sessionId,
@@ -170,7 +175,7 @@ const Session = () => {
     }
   }, [socket, currentUser, sessionId]);
 
-  const handleRemoveParticipant = useCallback((targetUserId) => {
+  const handleRemoveParticipant = useCallback((targetUserId: string) => {
     if (socket && currentUser?.isModerator && session?.users[targetUserId]) {
       if (confirm(`Are you sure you want to remove ${session.users[targetUserId].name} from the session?`)) {
         socket.emit('remove-participant', { sessionId, userId: currentUser.id, targetUserId });
@@ -280,7 +285,7 @@ const Session = () => {
             />
 
             {currentUser?.isModerator && (
-              <ModeratorControls session={session} onStartVoting={handleStartVoting} onResetVotes={handleResetVotes} onStopRound={handleStopRound} onTestSound={handleTestSound} onUpdateCardSet={handleUpdateCardSet} onTransferModerator={handleTransferModerator} onCloseSession={handleCloseSession} />
+              <ModeratorControls session={session} onTestSound={handleTestSound} onUpdateCardSet={handleUpdateCardSet} onTransferModerator={handleTransferModerator} onCloseSession={handleCloseSession} />
             )}
 
             {session.isVotingOpen && !session.votingComplete && (
@@ -308,10 +313,10 @@ const Session = () => {
                       </button>
                     )}
                   </div>
-                  <Results votes={session.votes} users={session.users} cardSet={session.cardSet} />
+                  <Results votes={session.votes} cardSet={session.cardSet ?? []} />
                 </div>
               ) : session.isVotingOpen ? (
-                <VotingCards cardSet={session.cardSet} onVote={handleVote} currentUserVote={currentUser ? session.votes[currentUser.id] : null} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onStopRound={handleStopRound} />
+                <VotingCards cardSet={session.cardSet ?? []} onVote={handleVote} currentUserVote={currentUser ? session.votes[currentUser.id] : null} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onStopRound={handleStopRound} />
               ) : (
                 <div className="card p-5">
                   <div className="flex items-center justify-between mb-3">

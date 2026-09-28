@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createSession } from '../utils/api';
 import { getRandomTitleSuggestion } from '../utils/titleGenerator';
@@ -17,7 +17,7 @@ const Home = () => {
     setSessionTitle(getRandomTitleSuggestion());
   }, []);
 
-  const handleCreateSession = async (e) => {
+  const handleCreateSession = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -25,12 +25,13 @@ const Home = () => {
       // Get saved card set preference, if any
       const cardSetPreference = getCardSetPreference();
       const cardSet = cardSetPreference ? cardSetPreference.cardSet : undefined;
-      
+
       const response = await createSession(moderatorName, sessionTitle, cardSet);
-      
+
       // Get the moderator user data (id comes back explicitly from the API)
+      const users = response.session.users;
       const moderatorId = response.userId || response.session.moderatorId;
-      const moderatorUser = response.session.users[moderatorId];
+      const moderatorUser = moderatorId ? users[moderatorId] : undefined;
       
       if (moderatorUser) {
         // Save user session data to storage instead of URL
