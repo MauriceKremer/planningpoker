@@ -22,14 +22,72 @@ const SESSION_EXPIRY = 24 * 60 * 60 * 1000;
 // `__proto__`-shaped key would corrupt the sessions object's prototype chain
 // instead of indexing a stored entry (CodeQL js/prototype-polluting-assignment).
 const SESSION_ID_PATTERN = /^[A-Z0-9]{8}$/;
-const isValidSessionId = (sessionId) =>
+const isValidSessionId = (sessionId: string): boolean =>
   typeof sessionId === 'string' && SESSION_ID_PATTERN.test(sessionId);
+
+/** A stored user session entry (one per session the user has joined). */
+export interface StoredUserSession {
+  userId: string;
+  userName: string;
+  isModerator: boolean;
+  joinedAt: string;
+  /** Epoch ms — the staleness clock (mirrors the server's 24h cleanup). */
+  lastAccess: number;
+}
+
+/** `{ [sessionId]: session }` as serialized in storage. */
+type StoredSessions = Record<string, StoredUserSession>;
+
+/** Input for `saveUserSession` (the bookkeeping the client persists). */
+export interface UserSessionInput {
+  userId: string;
+  userName: string;
+  isModerator?: boolean;
+  joinedAt?: string;
+}
+
+/**
+ * Parse the raw storage blob into a sessions map. The parse boundary is
+ * unknown by nature, so the shape is checked instead of blindly trusted
+ * (entries without the required fields are dropped).
+ */
+const parseSessions = (raw: string): StoredSessions => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return {};
+  }
+  if (!parsed || typeof parsed !== 'object') return {};
+
+  const entries = Object.entries(parsed as Record<string, unknown>);
+  return entries.reduce<StoredSessions>((acc, [sessionId, value]) => {
+    if (
+      isValidSessionId(sessionId) &&
+      value &&
+      typeof value === 'object' &&
+      typeof (value as Record<string, unknown>).userId === 'string' &&
+      typeof (value as Record<string, unknown>).userName === 'string' &&
+      typeof (value as Record<string, unknown>).lastAccess === 'number'
+    ) {
+      const session = value as Record<string, unknown>;
+      acc[sessionId] = {
+        userId: session.userId as string,
+        userName: session.userName as string,
+        isModerator: Boolean(session.isModerator),
+        joinedAt: typeof session.joinedAt === 'string' ? session.joinedAt : '',
+        lastAccess: session.lastAccess as number,
+      };
+    }
+    return acc;
+  }, {});
+};
 
 /**
  * Check whether a given Web Storage implementation is usable (throws on access
  * or quota, which happens in private mode or when storage is disabled).
  */
-const isStorageAvailable = (storageType) => {
+const isStorageAvailable = (storageType: 'localStorage' | 'sessionStorage'): boolean => {
   try {
     const storage = storageType === 'localStorage' ? localStorage : sessionStorage;
     const test = '__storage_test__';
@@ -45,9 +103,8 @@ const isStorageAvailable = (storageType) => {
  * Resolve the backing store for session continuity, preferring localStorage and
  * falling back to sessionStorage. Returns null when neither is usable, in which
  * case callers must skip persistence (the user re-enters their name on reload).
- * @returns {Storage|null}
  */
-const resolveStore = () => {
+const resolveStore = (): Storage | null => {
   if (isStorageAvailable('localStorage')) return localStorage;
   if (isStorageAvailable('sessionStorage')) return sessionStorage;
   return null;
@@ -55,7 +112,7 @@ const resolveStore = () => {
 
 // Report which backing store is currently in use, or null when neither is
 // available. Useful for debugging / the privacy "no data stored" guarantee.
-export const getStorageBackend = () => {
+export const getStorageBackend = (): 'localStorage' | 'sessionStorage' | null => {
   if (isStorageAvailable('localStorage')) return 'localStorage';
   if (isStorageAvailable('sessionStorage')) return 'sessionStorage';
   return null;
@@ -64,7 +121,7 @@ export const getStorageBackend = () => {
 /**
  * Clean up expired sessions from the resolved store.
  */
-const cleanupExpiredSessions = () => {
+const cleanupExpiredSessions = (): void => {
   const store = resolveStore();
   if (!store) return;
 
@@ -72,14 +129,14 @@ const cleanupExpiredSessions = () => {
   if (!sessionsData) return;
 
   try {
-    const sessions = JSON.parse(sessionsData);
+    const sessions = parseSessions(sessionsData);
     const now = Date.now();
 
-     // Filter out expired sessions
-    const activeSessions = Object.entries(sessions).reduce((acc, [sessionId, data]) => {
+    // Filter out expired sessions
+    const activeSessions = Object.entries(sessions).reduce<StoredSessions>((acc, [sessionId, data]) => {
       if (now - data.lastAccess < SESSION_EXPIRY) {
         acc[sessionId] = data;
-       }
+      }
       return acc;
     }, {});
 
@@ -93,7 +150,7 @@ const cleanupExpiredSessions = () => {
  * Save user session data to the resolved store (localStorage, else sessionStorage).
  * Returns false when the session ID is invalid or no store is available.
  */
-export const saveUserSession = (sessionId, userData) => {
+export const saveUserSession = (sessionId: string, userData: UserSessionInput): boolean => {
   if (!isValidSessionId(sessionId)) {
     console.warn('Refusing to save session with invalid session ID');
     return false;
@@ -109,7 +166,7 @@ export const saveUserSession = (sessionId, userData) => {
     cleanupExpiredSessions();
 
     const sessionsData = store.getItem(STORAGE_KEYS.USER_SESSIONS);
-    const sessions = sessionsData ? JSON.parse(sessionsData) : {};
+    const sessions = sessionsData ? parseSessions(sessionsData) : {};
 
     sessions[sessionId] = {
       userId: userData.userId,
@@ -128,9 +185,10 @@ export const saveUserSession = (sessionId, userData) => {
 };
 
 /**
- * Get user session data from the resolved store.
+ * Get user session data from the resolved store. Returns null when the session
+ * ID is invalid, nothing is stored, or the stored entry has expired.
  */
-export const getUserSession = (sessionId) => {
+export const getUserSession = (sessionId: string): StoredUserSession | null => {
   if (!isValidSessionId(sessionId)) return null;
 
   const store = resolveStore();
@@ -142,8 +200,8 @@ export const getUserSession = (sessionId) => {
     const sessionsData = store.getItem(STORAGE_KEYS.USER_SESSIONS);
     if (!sessionsData) return null;
 
-    const sessions = JSON.parse(sessionsData);
-     // Own-property lookup: `sessions['__proto__']` would resolve to
+    const sessions = parseSessions(sessionsData);
+    // Own-property lookup: `sessions['__proto__']` would resolve to
     // Object.prototype and the lastAccess write below would pollute it.
     const sessionData = Object.hasOwn(sessions, sessionId) ? sessions[sessionId] : null;
 
@@ -151,21 +209,24 @@ export const getUserSession = (sessionId) => {
       return null;
     }
 
-     // Check if session is still valid
+    // Check if session is still valid
     if (Date.now() - sessionData.lastAccess > SESSION_EXPIRY) {
       removeUserSession(sessionId);
       return null;
     }
 
-     // Update last access time
+    // Update last access time
     sessionData.lastAccess = Date.now();
     store.setItem(STORAGE_KEYS.USER_SESSIONS, JSON.stringify(sessions));
 
+    // The returned copy is a read-model for callers (lastAccess is the store's
+    // own staleness clock, not part of the consumer-facing shape).
     return {
       userId: sessionData.userId,
       userName: sessionData.userName,
       isModerator: sessionData.isModerator,
-      joinedAt: sessionData.joinedAt
+      joinedAt: sessionData.joinedAt,
+      lastAccess: sessionData.lastAccess
     };
   } catch (error) {
     console.error('Error getting user session:', error);
@@ -176,7 +237,7 @@ export const getUserSession = (sessionId) => {
 /**
  * Remove user session data from the resolved store.
  */
-export const removeUserSession = (sessionId) => {
+export const removeUserSession = (sessionId: string): void => {
   if (!isValidSessionId(sessionId)) return;
 
   const store = resolveStore();
@@ -186,7 +247,7 @@ export const removeUserSession = (sessionId) => {
     const sessionsData = store.getItem(STORAGE_KEYS.USER_SESSIONS);
     if (!sessionsData) return;
 
-    const sessions = JSON.parse(sessionsData);
+    const sessions = parseSessions(sessionsData);
     delete sessions[sessionId];
     store.setItem(STORAGE_KEYS.USER_SESSIONS, JSON.stringify(sessions));
   } catch (error) {
@@ -198,7 +259,7 @@ export const removeUserSession = (sessionId) => {
  * Clear all session data for cleanup (both stores, so a fallback never leaks
  * stale data after localStorage is restored).
  */
-export const clearAllSessionData = () => {
+export const clearAllSessionData = (): void => {
   try {
     if (isStorageAvailable('localStorage')) localStorage.removeItem(STORAGE_KEYS.USER_SESSIONS);
   } catch (error) {
@@ -214,11 +275,11 @@ export const clearAllSessionData = () => {
 /**
  * Get storage availability info for debugging.
  */
-export const getStorageInfo = () => {
+export const getStorageInfo = (): { backend: 'localStorage' | 'sessionStorage' | null; userSessions: number } => {
   const backend = getStorageBackend();
   const store = backend ? (backend === 'localStorage' ? localStorage : sessionStorage) : null;
   const raw = store ? store.getItem(STORAGE_KEYS.USER_SESSIONS) : null;
-  const count = raw ? Object.keys(JSON.parse(raw)).length : 0;
+  const count = raw ? Object.keys(parseSessions(raw)).length : 0;
   return {
     backend,
     userSessions: count

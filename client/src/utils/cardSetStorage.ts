@@ -2,12 +2,16 @@
 const CARD_SET_KEY = 'planningpoker_cardset';
 const CARD_SET_TYPE_KEY = 'planningpoker_cardset_type';
 
+/** The user's preferred card set as stored in localStorage. */
+export interface CardSetPreference {
+  cardSet: string[];
+  type: string;
+}
+
 /**
  * Save the user's preferred card set to localStorage
- * @param {Array} cardSet - The card values
- * @param {string} type - The type of card set ('fibonacci', 'modifiedFibonacci', etc., or 'custom')
  */
-export const saveCardSetPreference = (cardSet, type = 'fibonacci') => {
+export const saveCardSetPreference = (cardSet: string[], type: string = 'fibonacci'): void => {
   try {
     localStorage.setItem(CARD_SET_KEY, JSON.stringify(cardSet));
     localStorage.setItem(CARD_SET_TYPE_KEY, type);
@@ -17,19 +21,20 @@ export const saveCardSetPreference = (cardSet, type = 'fibonacci') => {
 };
 
 /**
- * Get the user's preferred card set from localStorage
- * @returns {Object|null} { cardSet: Array, type: string } or null if not found
+ * Get the user's preferred card set from localStorage. Returns null when the
+ * stored value is absent or not a string array (never trusts the raw parse).
  */
-export const getCardSetPreference = () => {
+export const getCardSetPreference = (): CardSetPreference | null => {
   try {
     const cardSet = localStorage.getItem(CARD_SET_KEY);
     const type = localStorage.getItem(CARD_SET_TYPE_KEY);
-    
+
     if (cardSet) {
-      return {
-        cardSet: JSON.parse(cardSet),
-        type: type || 'custom'
-      };
+      const parsed: unknown = JSON.parse(cardSet);
+      if (Array.isArray(parsed) && parsed.every((value) => typeof value === 'string')) {
+        return { cardSet: parsed, type: type || 'custom' };
+      }
+      return null;
     }
     return null;
   } catch (error) {
@@ -41,7 +46,7 @@ export const getCardSetPreference = () => {
 /**
  * Clear the card set preference from localStorage
  */
-export const clearCardSetPreference = () => {
+export const clearCardSetPreference = (): void => {
   try {
     localStorage.removeItem(CARD_SET_KEY);
     localStorage.removeItem(CARD_SET_TYPE_KEY);
