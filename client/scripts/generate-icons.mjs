@@ -53,12 +53,10 @@ const ctx = await browser.newContext({ deviceScaleFactor: 1 });
 const pg = await ctx.newPage();
 
 for (const t of targets) {
-  const vp = pg.viewportSize();
   await pg.setViewportSize({ width: t.size, height: t.size });
   await pg.setContent(page(t));
   await pg.screenshot({ path: join(outDir, t.file), omitBackground: t.bg === 'transparent' });
   console.log(`  generated public/icons/${t.file} (${t.size}×${t.size}${t.scale !== 1 ? `, scale ${t.scale}` : ''})`);
-  await pg.setViewportSize(vp);
 }
 
 await browser.close();
