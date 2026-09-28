@@ -10,6 +10,9 @@ const logger = require('./utils/logger');
 const sessionRoutes = require('./routes/sessions');
 const { setupSocketEvents, cleanupInactiveSessions } = require('./services/socketHandler');
 
+const PORT = process.env.PORT || 8081;
+const SWEEP_INTERVAL_MS = 60 * 1000;
+
 const app = express();
 const server = http.createServer(app);
 
@@ -31,8 +34,6 @@ const io = socketIo(server, {
   serveClient: false,
 });
 
-const PORT = process.env.PORT || 8081;
-
 // Validate CLIENT_URL is set in production
 if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
   console.error('FATAL: CLIENT_URL must be set in production');
@@ -51,7 +52,7 @@ const allowedOrigins = process.env.NODE_ENV === 'production'
 //   - script-src 'self': the CRA build emits only external bundles (no inline
 //     scripts; JSON-LD in index.html is non-executable and CSP-exempt)
 //   - style-src 'unsafe-inline': React inline style attributes
-//   - media-src data: the base64 round-start sound effect in useSessionSocket.js
+//   - media-src data: the base64 round-start sound effect in useSessionSocket
 //   - img-src data:: webpack-inlined assets below the inline-size limit
 const CSP_DIRECTIVES = {
   defaultSrc: ["'self'"],
@@ -81,10 +82,10 @@ app.use(helmet({
   } : false,
 }));
 
-// Rate limiting for the API
+// Rate limiting for the API (window overridable for E2E stacks)
 const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: parseInt(process.env.API_RATE_LIMIT || '100', 10), // overridable for E2E stacks
+  windowMs: 5 * 60 * 1000,
+  max: parseInt(process.env.API_RATE_LIMIT || '100', 10),
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -95,34 +96,28 @@ app.use('/api/', limiter);
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true); // mobile apps, curl, etc.
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.warn(`Blocked CORS request from unauthorized origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    console.warn(`Blocked CORS request from unauthorized origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
 app.use(express.json({ limit: '10kb' }));
 
-// API version endpoint for cache busting
 const API_VERSION = require('../package.json').version;
 const SERVER_START_TIME = new Date().toISOString();
 
-// Set API version headers for all /api responses (must be before routes)
+// Version headers for cache busting (must be registered before routes)
 app.use('/api', (req, res, next) => {
   res.setHeader('X-API-Version', API_VERSION);
   res.setHeader('X-Server-Start', SERVER_START_TIME);
   next();
 });
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// API version endpoint for cache busting
 app.get('/api/version', (req, res) => {
   res.json({
     version: API_VERSION,
@@ -131,48 +126,39 @@ app.get('/api/version', (req, res) => {
   });
 });
 
-// Routes
 app.use('/api/sessions', sessionRoutes);
 
-// Security: Log suspicious activity and return generic 400/500 responses.
+// Security: log suspicious activity and return a generic 500 response.
 // Privacy: logs deliberately omit the client IP (PRIVACY.md — "no IP address
 // logging"); path + error message are enough to triage incidents.
 app.use((err, req, res, next) => {
-  if (err) {
-    logger.error('Security Event:', {
-      path: req.path,
-      error: err.message,
-    });
-    if (!res.headersSent) {
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-  next();
+  if (!err) return next();
+  logger.error('Security Event:', {
+    path: req.path,
+    error: err.message,
+  });
+  if (res.headersSent) return next();
+  res.status(500).json({ error: 'Internal server error' });
 });
 
-(async () => {
-  // Setup Socket.IO event handlers
-  setupSocketEvents(io);
+setupSocketEvents(io);
 
-  // Sweep the in-memory session store every 60 seconds for inactive users
-  // and stale (>24h, no active users) sessions.
-  const cleanupTimer = setInterval(() => {
-    cleanupInactiveSessions(io);
-  }, 60 * 1000);
+// Sweep the in-memory session store every 60 seconds for inactive users
+// and stale (>24h, no active users) sessions.
+const cleanupTimer = setInterval(() => cleanupInactiveSessions(io), SWEEP_INTERVAL_MS);
 
-  const gracefulShutdown = (signal) => {
-    logger.info(`${signal} received - shutting down gracefully...`);
-    clearInterval(cleanupTimer);
-    io.close();
-    server.close();
-    process.exit(0);
-  };
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+const gracefulShutdown = (signal) => {
+  logger.info(`${signal} received - shutting down gracefully...`);
+  clearInterval(cleanupTimer);
+  io.close();
+  server.close();
+  process.exit(0);
+};
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-  server.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-  });
-})();
+server.listen(PORT, () => {
+  logger.info(`Server running on port ${PORT}`);
+});
 
 module.exports = { app, server, io };
