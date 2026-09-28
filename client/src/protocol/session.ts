@@ -11,18 +11,38 @@ import type { ActiveVoteOutState, User } from './events';
 
 export interface SessionState {
   id: string;
-  title?: string;
-  moderator?: string | null;
-  moderatorId?: string;
-  cardSet?: string[];
-  round?: number;
-   users: Record<string, User>;
-   votes: Record<string, string>;
-   votedUserIds?: string[];
-  isVotingOpen?: boolean;
-   votingComplete?: boolean;
-   activeVoteOut?: ActiveVoteOutState | null;
-   // The initial full-state load can carry other keys (heartbeat bookkeeping,
-   // etc.) we don't yet type explicitly. Preserve them through merges.
+   title?: string;
+   moderator?: string | null;
+   moderatorId?: string;
+   cardSet?: string[];
+   round?: number;
+    users: Record<string, User>;
+    votes: Record<string, string>;
+    votedUserIds?: string[];
+   isVotingOpen?: boolean;
+    votingComplete?: boolean;
+    activeVoteOut?: ActiveVoteOutState | null;
+    // The initial full-state load can carry other keys (heartbeat bookkeeping,
+    // etc.) we don't yet type explicitly. Preserve them through merges.
    [key: string]: unknown;
+}
+
+/**
+ * The app's notion of "the current user", distinct from a full socket `User`
+ * broadcast: the page holds at most identity + role, optionally joined-at. The
+ * index signature lets any `User` broadcast be assigned here as the current
+ * user is refreshed (e.g. a moderator swap carries a full `User`).
+ */
+export interface SessionUser {
+   id: string;
+   name: string;
+   isModerator?: boolean;
+   joinedAt?: string;
+    [key: string]: unknown;
+}
+
+/** The info the UI shows on a closed/replaced session. */
+export interface SessionClosedInfo {
+   sessionTitle: string;
+   moderatorName: string | null;
 }
