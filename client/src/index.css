@@ -1,11 +1,81 @@
 @import 'tailwindcss';
 @import './theme/themes.css';
 
-/* v3-compatible JS config: keeps the CSS-variable color scales (with
-   <alpha-value> semantics), shadows and font stack exactly as before.
-   Migrating these to a CSS @theme block is deliberately deferred until the
-   zero-diff visual gate proves the pipeline stable. */
-@config '../tailwind.config.cjs';
+/* Tailwind theme layer: maps the palette variables generated from
+   themes.json (see scripts/generate-theme-css.mjs) to utility tokens.
+   Colors are rgb(var(--c-…)) references; opacity modifiers compose on top. */
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    Arial, sans-serif;
+
+  --shadow-card-lg: 0 2px 4px rgb(var(--c-mocha-800) / 0.08), 0 10px 32px rgb(var(--c-mocha-800) / 0.14);
+  --shadow-card: 0 1px 2px rgb(var(--c-mocha-800) / 0.06), 0 4px 16px rgb(var(--c-mocha-800) / 0.08);
+  --shadow-button: 0 1px 2px rgb(var(--c-mocha-800) / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.15);
+
+  --color-mocha-50: rgb(var(--c-mocha-50));
+  --color-mocha-100: rgb(var(--c-mocha-100));
+  --color-mocha-200: rgb(var(--c-mocha-200));
+  --color-mocha-300: rgb(var(--c-mocha-300));
+  --color-mocha-400: rgb(var(--c-mocha-400));
+  --color-mocha-500: rgb(var(--c-mocha-500));
+  --color-mocha-600: rgb(var(--c-mocha-600));
+  --color-mocha-700: rgb(var(--c-mocha-700));
+  --color-mocha-800: rgb(var(--c-mocha-800));
+  --color-mocha-900: rgb(var(--c-mocha-900));
+  --color-ember-50: rgb(var(--c-ember-50));
+  --color-ember-100: rgb(var(--c-ember-100));
+  --color-ember-200: rgb(var(--c-ember-200));
+  --color-ember-300: rgb(var(--c-ember-300));
+  --color-ember-400: rgb(var(--c-ember-400));
+  --color-ember-500: rgb(var(--c-ember-500));
+  --color-ember-600: rgb(var(--c-ember-600));
+  --color-ember-700: rgb(var(--c-ember-700));
+  --color-ember-800: rgb(var(--c-ember-800));
+  --color-caramel-50: rgb(var(--c-caramel-50));
+  --color-caramel-100: rgb(var(--c-caramel-100));
+  --color-caramel-200: rgb(var(--c-caramel-200));
+  --color-caramel-300: rgb(var(--c-caramel-300));
+  --color-caramel-400: rgb(var(--c-caramel-400));
+  --color-caramel-500: rgb(var(--c-caramel-500));
+  --color-caramel-600: rgb(var(--c-caramel-600));
+  --color-caramel-700: rgb(var(--c-caramel-700));
+  --color-caramel-800: rgb(var(--c-caramel-800));
+  --color-cream-25: rgb(var(--c-cream-25));
+  --color-cream-50: rgb(var(--c-cream-50));
+  --color-cream-100: rgb(var(--c-cream-100));
+  --color-cream-200: rgb(var(--c-cream-200));
+  --color-cream-300: rgb(var(--c-cream-300));
+  --color-cream-400: rgb(var(--c-cream-400));
+  --color-cream-500: rgb(var(--c-cream-500));
+  --color-clay-50: rgb(var(--c-clay-50));
+  --color-clay-100: rgb(var(--c-clay-100));
+  --color-clay-200: rgb(var(--c-clay-200));
+  --color-clay-300: rgb(var(--c-clay-300));
+  --color-clay-400: rgb(var(--c-clay-400));
+  --color-clay-500: rgb(var(--c-clay-500));
+  --color-clay-600: rgb(var(--c-clay-600));
+  --color-clay-700: rgb(var(--c-clay-700));
+  --color-clay-800: rgb(var(--c-clay-800));
+  --color-sage-50: rgb(var(--c-sage-50));
+  --color-sage-100: rgb(var(--c-sage-100));
+  --color-sage-200: rgb(var(--c-sage-200));
+  --color-sage-300: rgb(var(--c-sage-300));
+  --color-sage-400: rgb(var(--c-sage-400));
+  --color-sage-500: rgb(var(--c-sage-500));
+  --color-sage-600: rgb(var(--c-sage-600));
+  --color-sage-700: rgb(var(--c-sage-700));
+  --color-honey-50: rgb(var(--c-honey-50));
+  --color-honey-100: rgb(var(--c-honey-100));
+  --color-honey-200: rgb(var(--c-honey-200));
+  --color-honey-300: rgb(var(--c-honey-300));
+  --color-honey-400: rgb(var(--c-honey-400));
+  --color-honey-500: rgb(var(--c-honey-500));
+  --color-honey-600: rgb(var(--c-honey-600));
+  --color-honey-700: rgb(var(--c-honey-700));
+  --color-honey-800: rgb(var(--c-honey-800));
+}
+
 
 /* ~90% global scale: every rem-based Tailwind utility (font sizes, spacing,
    gaps, radii) shrinks ~10%, giving the whole UI a sleeker, denser feel by
@@ -16,9 +86,7 @@ html {
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: rgb(var(--c-mocha-800));
