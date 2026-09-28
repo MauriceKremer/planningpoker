@@ -1,6 +1,6 @@
 /**
  * Client-side session state — the shape the reducer (`sessionDelta.ts`) reads
- * from and writes to. M5 domain-first typing.
+ * from and writes to — domain-first typing.
  *
  * This is intentionally a structural shape (not a frozen contract): several
  * fields are optional because a given event only updates the subset it owns,

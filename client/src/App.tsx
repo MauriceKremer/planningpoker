@@ -11,7 +11,7 @@ import { useActiveTheme } from './theme/themes';
 /**
  * The router-agnostic application shell: header + routes + active theme.
  *
- * Kept separate from `App` so the build-time pre-render (M3) can wrap the same
+ * Kept separate from `App` so the build-time pre-render can wrap the same
  * tree in a StaticRouter while the browser uses BrowserRouter. Rendering the
  * shell must therefore stay free of `window`/`document` access at render time.
  */

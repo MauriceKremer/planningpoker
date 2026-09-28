@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { joinSession } from '../utils/api';
+import { useState, type FormEvent } from 'react';
+import { joinSession, joinErrorToMessage } from '../utils/api';
 import type { SessionUser } from '../protocol/session';
 
 interface UsernamePromptProps {
@@ -13,7 +13,7 @@ const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }: UsernameProm
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleJoinSession = async (e: React.FormEvent) => {
+  const handleJoinSession = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -25,22 +25,7 @@ const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }: UsernameProm
       onJoinSuccess(response.user);
     } catch (error) {
       console.error('Failed to join session:', error);
-
-      // Match on the HTTP status (the stable contract), with the parsed
-      // body available on error.data. `api.request` rejects with a
-      // `RequestError` carrying `status`/`data`.
-      if (error instanceof Error && 'status' in error) {
-        const httpError = error as unknown as { status: number };
-        if (httpError.status === 409) {
-          setError('This username is already taken. Please choose a different name.');
-        } else if (httpError.status === 404) {
-          setError('Session not found. Please check the session ID.');
-        } else {
-          setError('Failed to join session. Please try again.');
-        }
-      } else {
-        setError('Failed to join session. Please try again.');
-      }
+      setError(joinErrorToMessage(error));
     } finally {
       setIsLoading(false);
     }

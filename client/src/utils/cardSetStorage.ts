@@ -1,4 +1,3 @@
-// Storage keys
 const CARD_SET_KEY = 'planningpoker_cardset';
 const CARD_SET_TYPE_KEY = 'planningpoker_cardset_type';
 
@@ -8,9 +7,6 @@ export interface CardSetPreference {
   type: string;
 }
 
-/**
- * Save the user's preferred card set to localStorage
- */
 export const saveCardSetPreference = (cardSet: string[], type: string = 'fibonacci'): void => {
   try {
     localStorage.setItem(CARD_SET_KEY, JSON.stringify(cardSet));
@@ -43,9 +39,6 @@ export const getCardSetPreference = (): CardSetPreference | null => {
   }
 };
 
-/**
- * Clear the card set preference from localStorage
- */
 export const clearCardSetPreference = (): void => {
   try {
     localStorage.removeItem(CARD_SET_KEY);

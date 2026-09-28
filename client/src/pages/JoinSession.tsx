@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { joinSession, RequestError } from '../utils/api';
+import { joinSession, joinErrorToMessage } from '../utils/api';
 import { saveUserSession } from '../utils/sessionStorage';
 import SEO from '../components/SEO';
 
@@ -18,40 +18,16 @@ const JoinSession = () => {
 
     try {
       const response = await joinSession(sessionId, userName);
-      // The server returns the created user explicitly — identity by id,
-      // never by name matching (names are display strings).
-      const newUser = response.user;
-
-      if (newUser) {
-        // Save user session data to storage instead of URL
-        saveUserSession(sessionId, {
-          userId: response.userId || newUser.id,
-          userName: newUser.name,
-          isModerator: newUser.isModerator || false,
-          joinedAt: newUser.joinedAt
-        });
-
-        // Navigate with clean URL (no user parameters)
-        navigate(`/session/${sessionId}`);
-      } else {
-        throw new Error('Failed to find user in session after joining');
-      }
+      saveUserSession(sessionId, {
+        userId: response.userId || response.user.id,
+        userName: response.user.name,
+        isModerator: response.user.isModerator || false,
+        joinedAt: response.user.joinedAt
+      });
+      navigate(`/session/${sessionId}`);
     } catch (error) {
       console.error('Failed to join session:', error);
-
-      // Match on the HTTP status (the stable contract), with the parsed
-      // body available on error.data.
-      if (error instanceof RequestError) {
-        if (error.status === 409) {
-          setError('This username is already taken. Please choose a different name.');
-        } else if (error.status === 404) {
-          setError('Session not found. Please check the session ID.');
-        } else {
-          setError('Failed to join session. Please try again.');
-        }
-      } else {
-        setError('Failed to join session. Please try again.');
-      }
+      setError(joinErrorToMessage(error));
     } finally {
       setIsLoading(false);
     }

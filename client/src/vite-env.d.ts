@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 /**
- * Vite build-time env contract (M5). `import.meta.env` is consumed by the
+ * Vite build-time env contract. `import.meta.env` is consumed by the
  * typed client modules (e.g. `utils/socket.ts` reads `VITE_SOCKET_URL`). These
  * are the only Vite vars the app reads; declaring them keeps `strict` happy
  * without an `any` `import.meta`.

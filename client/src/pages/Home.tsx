@@ -13,7 +13,6 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Set a random title suggestion on component mount
     setSessionTitle(getRandomTitleSuggestion());
   }, []);
 
@@ -22,28 +21,19 @@ const Home = () => {
     setIsLoading(true);
 
     try {
-      // Get saved card set preference, if any
-      const cardSetPreference = getCardSetPreference();
-      const cardSet = cardSetPreference ? cardSetPreference.cardSet : undefined;
+      const response = await createSession(moderatorName, sessionTitle, getCardSetPreference()?.cardSet);
 
-      const response = await createSession(moderatorName, sessionTitle, cardSet);
-
-      // Get the moderator user data (id comes back explicitly from the API)
       const users = response.session.users;
       const moderatorId = response.userId || response.session.moderatorId;
       const moderatorUser = moderatorId ? users[moderatorId] : undefined;
-      
+
       if (moderatorUser) {
-        // Save user session data to storage instead of URL
         saveUserSession(response.sessionId, {
           userId: moderatorUser.id,
           userName: moderatorUser.name,
           isModerator: true,
           joinedAt: moderatorUser.joinedAt
         });
-        
-        
-        // Navigate with clean URL (no user parameters)
         navigate(`/session/${response.sessionId}`);
       } else {
         throw new Error('Failed to find moderator user in session');

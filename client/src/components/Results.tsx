@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import type { VotesMap } from '../protocol/events';
 
 interface ResultsProps {
@@ -6,25 +6,18 @@ interface ResultsProps {
   cardSet: string[];
 }
 
-const Results = React.memo(({ votes, cardSet }: ResultsProps) => {
+const Results = memo(({ votes, cardSet }: ResultsProps) => {
   const voteValues = Object.values(votes);
+  const displayCards = [...cardSet, '☕', '❓'];
 
-  // Create vote distribution including all card values
-  const voteDistribution: Record<string, number> = {};
-
-  // Initialize all card set values with 0
-  [...cardSet, '☕', '❓'].forEach(value => {
-    voteDistribution[value] = 0;
-  });
-
-  // Count actual votes (the `?? 0` + 1 form covers both the "already present"
-  // and the "vote outside the standard set" branch of the original code).
+  // Every card shows a row (count 0 included); votes outside the set get their own.
+  const voteDistribution: Record<string, number> = Object.fromEntries(
+    displayCards.map(value => [value, 0]),
+  );
   voteValues.forEach(vote => {
     voteDistribution[vote] = (voteDistribution[vote] ?? 0) + 1;
   });
-
-  // Sort card values for display - maintain exact card set order
-  const sortedCards = [...cardSet, '☕', '❓'].filter(card => Object.hasOwn(voteDistribution, card));
+  const sortedCards = displayCards.filter(card => Object.hasOwn(voteDistribution, card));
 
   return (
     <div className="space-y-2.5">
@@ -38,12 +31,10 @@ const Results = React.memo(({ votes, cardSet }: ResultsProps) => {
 
             return (
               <div key={vote} className="flex items-center space-x-2 text-sm">
-                {/* Vote label in front */}
                 <div className="w-6 text-center shrink-0">
                   <span className="font-semibold text-mocha-700">{vote}</span>
                 </div>
 
-                {/* Bar chart */}
                 <div className="flex-1">
                   <div className="w-full bg-cream-200/80 rounded-full h-3.5 relative overflow-hidden">
                     <div
@@ -55,14 +46,12 @@ const Results = React.memo(({ votes, cardSet }: ResultsProps) => {
                   </div>
                 </div>
 
-                {/* Count after the bar */}
                 <div className="w-10 text-right shrink-0">
                   <span className={`text-xs ${count > 0 ? 'font-medium text-mocha-700' : 'text-mocha-300'}`}>
                     {count}
                   </span>
                 </div>
 
-                {/* Percentage */}
                 <div className="w-8 text-right shrink-0">
                   <span className={`text-xs ${count > 0 ? 'text-mocha-500' : 'text-mocha-300'}`}>
                     {totalVotes > 0 ? `${Math.round((count / totalVotes) * 100)}%` : '0%'}

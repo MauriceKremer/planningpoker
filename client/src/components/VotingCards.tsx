@@ -1,5 +1,11 @@
-import React from 'react';
+import { memo } from 'react';
 import type { SessionUser } from '../protocol/session';
+
+// Special cards beside the numeric estimates (server accepts these values).
+const SPECIAL_OPTIONS = [
+  { value: '☕', label: 'Break', description: 'Need a break' },
+  { value: '❓', label: 'Question', description: 'Have questions' },
+] as const;
 
 interface VotingCardsProps {
   cardSet: string[];
@@ -10,13 +16,7 @@ interface VotingCardsProps {
   onStopRound?: () => void;
 }
 
-const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen, currentUser, onStopRound }: VotingCardsProps) => {
-  // Special voting options
-  const specialOptions = [
-    { value: '☕', label: 'Break', description: 'Need a break' },
-    { value: '❓', label: 'Question', description: 'Have questions' }
-  ];
-
+const VotingCards = memo(({ cardSet, onVote, currentUserVote, isVotingOpen, currentUser, onStopRound }: VotingCardsProps) => {
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-3">
@@ -40,7 +40,6 @@ const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen
         </div>
       )}
 
-      {/* Regular estimation cards */}
       <div className="mb-3.5">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-mocha-400 mb-1.5">Story Points</h4>
         <div className="grid grid-cols-4 gap-2.5">
@@ -69,11 +68,10 @@ const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen
         </div>
       </div>
 
-      {/* Special options */}
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wide text-mocha-400 mb-1.5">Other Options</h4>
         <div className="grid grid-cols-2 gap-2.5">
-          {specialOptions.map((option) => {
+          {SPECIAL_OPTIONS.map((option) => {
             const isSelected = currentUserVote === option.value;
             return (
               <button

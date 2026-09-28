@@ -12,8 +12,7 @@ const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }: Sessio
 
   const handleReturnHome = () => {
     try {
-      // Clear all stored session data to avoid auto-restore
-      clearAllSessionData();
+      clearAllSessionData(); // no auto-restore from stale storage
     } catch { /* nothing stored — fresh visit */ }
     navigate('/');
   };

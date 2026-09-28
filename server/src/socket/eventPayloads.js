@@ -1,10 +1,7 @@
 /**
- * Pure delta-payload builders for socket broadcasts.
- *
- * SOLID — Single Responsibility: turn a session (+context) into the
- *   minimal object a client needs to update its local state.
- * DRY    — every event's "what changed" is expressed once, here.
- * KISS   — plain functions, no I/O, no mutation of the input session.
+ * Pure delta-payload builders for socket broadcasts: turn a session
+ * (+context) into the minimal object a client needs to update its local
+ * state. Every event's "what changed" is expressed once, here.
  *
  * Contract: NO builder ever returns a `session` key. Clients merge
  * these deltas into their local session copy (see client
@@ -12,10 +9,10 @@
  * the full session on every vote — the root cause of the "resources
  * hammered when voting starts" regression.
  *
- * M5.2: every payload a builder produces is validated against the shared
- * socket contract (`src/protocol/eventSchemas.js`) at construction time —
- * fail-fast, so a contract violation surfaces as an `error` event instead of
- * broadcasting a delta that would silently corrupt client state.
+ * Every payload is validated against the shared socket contract
+ * (`src/protocol/eventSchemas.js`) at construction time — fail-fast, so a
+ * contract violation surfaces as an `error` event instead of broadcasting a
+ * delta that would silently corrupt client state.
  */
 const { assertOutgoing } = require('../protocol/eventSchemas');
 

@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useActiveTheme } from '../theme/themes';
 
 /**
- * The build-time pre-render (scripts/prerender.mjs, M3) bakes route-specific
+ * The build-time pre-render (scripts/prerender.mjs) bakes route-specific
  * meta into the served HTML for crawlers and link-unfurlers that don't execute
  * JavaScript (GPTBot, WhatsApp, Slack, Discord, iMessage). Every tag it injects
  * carries `data-prerender="true"` (see `renderHead` there). React 19 hoists its

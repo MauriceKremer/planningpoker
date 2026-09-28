@@ -1,6 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
-
 import type { SessionState, SessionUser } from '../protocol/session';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
 
 /** Server response for `POST /sessions/create`. */
 export interface CreateSessionResponse {
@@ -35,7 +35,7 @@ export class RequestError extends Error {
   }
 }
 
-// Track server version for cache busting
+// Track server start time for cache busting on server restarts.
 let serverStartTime: string | null = null;
 let versionCheckInProgress = false;
 
@@ -43,7 +43,6 @@ interface VersionResponse {
   startTime?: string;
 }
 
-// Check version on first API call
 const checkServerVersion = async (): Promise<void> => {
   if (versionCheckInProgress) return;
 
@@ -55,7 +54,7 @@ const checkServerVersion = async (): Promise<void> => {
     const currentStartTime = data.startTime;
 
     if (serverStartTime && serverStartTime !== currentStartTime) {
-      // Server restarted - clear cache and reload (but only once)
+      // Server restarted — clear caches and reload, but only once.
       if (!sessionStorage.getItem('_server_reload')) {
         console.log('Server restarted detected, reloading page...');
         sessionStorage.setItem('_server_reload', '1');
@@ -66,7 +65,7 @@ const checkServerVersion = async (): Promise<void> => {
         }
         window.location.reload();
       } else {
-        // Already reloaded once, update stored version
+        // Already reloaded once — just adopt the new start time.
         serverStartTime = currentStartTime ?? null;
         sessionStorage.removeItem('_server_reload');
       }
@@ -81,7 +80,6 @@ const checkServerVersion = async (): Promise<void> => {
   }
 };
 
-// Check version on every API response via headers
 const checkResponseVersion = (response: Response): void => {
   const serverStart = response.headers.get('x-server-start');
   if (serverStart && serverStartTime && serverStart !== serverStartTime) {
@@ -124,7 +122,6 @@ const request = async <T>(endpoint: string, options: RequestOptions = {}): Promi
   return response.json() as Promise<T>;
 };
 
-// Initialize version check
 checkServerVersion();
 
 export const createSession = async (
@@ -132,13 +129,9 @@ export const createSession = async (
   title: string,
   cardSet?: string[],
 ): Promise<CreateSessionResponse> => {
-  const payload: { moderatorName: string; title: string; cardSet?: string[] } = { moderatorName, title };
-  if (cardSet) {
-    payload.cardSet = cardSet;
-  }
   return request<CreateSessionResponse>('/sessions/create', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ moderatorName, title, ...(cardSet ? { cardSet } : {}) }),
   });
 };
 
@@ -148,6 +141,18 @@ export const joinSession = async (sessionId: string, userName: string): Promise<
     body: JSON.stringify({ userName }),
   });
 };
+
+// Shared copy for the two join flows (JoinSession page + UsernamePrompt).
+const JOIN_ERROR_MESSAGES: Record<number, string> = {
+  409: 'This username is already taken. Please choose a different name.',
+  404: 'Session not found. Please check the session ID.',
+};
+const JOIN_ERROR_FALLBACK = 'Failed to join session. Please try again.';
+
+export const joinErrorToMessage = (error: unknown): string =>
+  error instanceof RequestError
+    ? (JOIN_ERROR_MESSAGES[error.status] ?? JOIN_ERROR_FALLBACK)
+    : JOIN_ERROR_FALLBACK;
 
 export const getSession = async (sessionId: string): Promise<GetSessionResponse> => {
   return request<GetSessionResponse>(`/sessions/${sessionId}`, {
