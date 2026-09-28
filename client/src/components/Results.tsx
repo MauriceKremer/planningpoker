@@ -48,7 +48,7 @@ const Results = React.memo(({ votes, cardSet }: ResultsProps) => {
                   <div className="w-full bg-cream-200/80 rounded-full h-3.5 relative overflow-hidden">
                     <div
                       className={`h-3.5 rounded-full transition-all duration-300 ease-out ${
-                        count > 0 ? 'bg-gradient-to-r from-ember-500 to-ember-600' : 'bg-transparent'
+                        count > 0 ? 'bg-linear-to-r/srgb from-ember-500 to-ember-600' : 'bg-transparent'
                       }`}
                       style={{ width: `${Math.max(percentage, count > 0 ? 6 : 0)}%` }}
                     />

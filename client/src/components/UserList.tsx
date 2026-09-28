@@ -134,8 +134,8 @@ const UserList = React.memo(({
             <div className="flex items-center space-x-2">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
                 user.isModerator
-                  ? 'bg-gradient-to-b from-honey-400 to-honey-500 shadow-button'
-                  : 'bg-gradient-to-b from-mocha-500 to-mocha-700'
+                  ? 'bg-linear-to-b/srgb from-honey-400 to-honey-500 shadow-button'
+                  : 'bg-linear-to-b/srgb from-mocha-500 to-mocha-700'
               }`}>
                 <span className="text-white text-xs font-bold leading-none">
                   {user.name.charAt(0).toUpperCase()}

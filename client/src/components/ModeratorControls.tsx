@@ -104,7 +104,7 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
       <div className="card p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h4 className="font-semibold text-mocha-800 text-sm">Moderator Controls</h4>
+            <h2 className="font-semibold text-mocha-800 text-sm">Moderator Controls</h2>
             <p className="hidden sm:block text-xs text-mocha-500 mt-0.5">
               Card Set: <span className="text-mocha-600 font-medium">{currentCardSet.join(', ')}</span>
             </p>

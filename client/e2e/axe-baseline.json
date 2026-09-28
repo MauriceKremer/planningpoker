@@ -1,13 +1,7 @@
 {
-  "//": "A11y baseline. Entries here are KNOWN, pre-existing violations; the suite fails on anything NEW. The /session heading-order (h1 → h4 'Moderator Controls') is the only current entry — fixing the heading hierarchy removes it and activates the strict 0-violations gate.",
+  "//": "A11y baseline. Entries here are KNOWN, pre-existing violations; the suite fails on anything NEW. Strict 0-violations gate active since the heading-order fix (session: status banner, moderator controls and vote-out banner are h2).",
   "home": [],
   "about": [],
   "join": [],
-  "session": [
-    {
-      "id": "heading-order",
-      "impact": "moderate",
-      "nodes": 1
-    }
-  ]
+  "session": []
 }

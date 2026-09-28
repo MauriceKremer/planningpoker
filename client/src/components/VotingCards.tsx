@@ -56,7 +56,7 @@ const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen
                   flex items-center justify-center text-lg font-bold
                   disabled:opacity-50 disabled:cursor-not-allowed
                   ${isSelected
-                    ? 'bg-gradient-to-b from-ember-500 to-ember-600 border-ember-600 text-white shadow-button transform scale-105'
+                    ? 'bg-linear-to-b/srgb from-ember-500 to-ember-600 border-ember-600 text-white shadow-button transform scale-105'
                     : 'bg-cream-100/90 border-cream-400 text-mocha-700 hover:bg-ember-50 hover:border-ember-300 hover:text-ember-700'
                   }
                   ${!isVotingOpen && isSelected ? 'ring-2 ring-ember-300' : ''}
@@ -86,7 +86,7 @@ const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen
                   flex flex-col items-center justify-center
                   disabled:opacity-50 disabled:cursor-not-allowed
                   ${isSelected
-                    ? 'bg-gradient-to-b from-caramel-400 to-caramel-600 border-caramel-600 text-white shadow-button transform scale-105'
+                    ? 'bg-linear-to-b/srgb from-caramel-400 to-caramel-600 border-caramel-600 text-white shadow-button transform scale-105'
                     : 'bg-caramel-50/80 border-caramel-200 text-caramel-800 hover:bg-caramel-100 hover:border-caramel-300'
                   }
                   ${!isVotingOpen && isSelected ? 'ring-2 ring-caramel-300' : ''}

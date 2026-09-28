@@ -1,8 +1,11 @@
+@import 'tailwindcss';
 @import './theme/themes.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* v3-compatible JS config: keeps the CSS-variable color scales (with
+   <alpha-value> semantics), shadows and font stack exactly as before.
+   Migrating these to a CSS @theme block is deliberately deferred until the
+   zero-diff visual gate proves the pipeline stable. */
+@config '../tailwind.config.cjs';
 
 /* ~90% global scale: every rem-based Tailwind utility (font sizes, spacing,
    gaps, radii) shrinks ~10%, giving the whole UI a sleeker, denser feel by
@@ -27,6 +30,17 @@ code {
     monospace;
 }
 
+/* @utility (not @layer components): the badge/panel bases are composed into
+   the variants below via @apply, which in v4 only works for utilities. */
+@utility badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium leading-tight;
+}
+
+/* ---------- Panels (inline banners inside cards) ---------- */
+@utility panel {
+  @apply rounded-xl border border-gray-200 p-3.5;
+}
+
 @layer components {
   /* ---------- Cards & containers ----------
      Near-solid warm ivory so the autumn pattern stays visible around the
@@ -47,7 +61,7 @@ code {
   }
   /* Primary: burnt orange gradient */
   .btn-primary {
-    @apply text-white bg-gradient-to-b from-ember-500 to-ember-600
+    @apply text-white bg-linear-to-b/srgb from-ember-500 to-ember-600
       hover:from-ember-600 hover:to-ember-700 active:from-ember-700 active:to-ember-800
       shadow-button;
   }
@@ -58,7 +72,7 @@ code {
   }
   /* Destructive: warm muted rose */
   .btn-danger {
-    @apply text-white bg-gradient-to-b from-clay-500 to-clay-600
+    @apply text-white bg-linear-to-b/srgb from-clay-500 to-clay-600
       hover:from-clay-600 hover:to-clay-700 active:from-clay-700 active:to-clay-800
       shadow-button;
   }
@@ -77,9 +91,6 @@ code {
   }
 
   /* ---------- Badges & status indicators ---------- */
-  .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium leading-tight;
-  }
   .badge-ember {
     @apply badge bg-ember-100 text-ember-800;
   }
@@ -96,10 +107,6 @@ code {
     @apply badge bg-cream-100 text-mocha-500;
   }
 
-  /* ---------- Panels (inline banners inside cards) ---------- */
-  .panel {
-    @apply rounded-xl border p-3.5;
-  }
   .panel-ember {
     @apply panel bg-ember-50/80 border-ember-200;
   }

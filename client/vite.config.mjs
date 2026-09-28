@@ -1,5 +1,6 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 // Migrated from CRA (react-scripts 5.0.1, deprecated).
 //
@@ -12,7 +13,7 @@ import react from '@vitejs/plugin-react';
 //   (script-src 'self', no unsafe-inline) was verified against that shape —
 //   scripts/verify-build.mjs enforces it on every build.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   build: {
     outDir: 'build',
     sourcemap: true,
@@ -22,7 +23,7 @@ export default defineConfig({
     port: 3000,
   },
   // react-helmet-async is CommonJS; without noExternal Vite's SSR module
-  // runner cannot statically resolve its named exports during the M3
+  // runner cannot statically resolve its named exports during the build-time
   // pre-render (scripts/prerender.mjs).
   ssr: {
     noExternal: ['react-helmet-async'],

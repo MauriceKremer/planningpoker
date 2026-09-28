@@ -292,7 +292,7 @@ const Session = () => {
               <div className="card p-4">
                 <div className="flex items-center">
                   <div className="w-2.5 h-2.5 bg-ember-500 rounded-full animate-pulse mr-2.5"></div>
-                  <div><h4 className="font-semibold text-ember-800 text-sm">Voting Round Active</h4><p className="text-xs text-ember-700">Select your estimate below. Votes will be revealed when everyone has voted.</p></div>
+                  <div><h2 className="font-semibold text-ember-800 text-sm">Voting Round Active</h2><p className="text-xs text-ember-700">Select your estimate below. Votes will be revealed when everyone has voted.</p></div>
                 </div>
               </div>
             )}

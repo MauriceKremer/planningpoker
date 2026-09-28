@@ -30,7 +30,7 @@ const VoteOutBanner = ({ activeVoteOut, currentUserId, onVote, onCancel }: VoteO
     <div className="panel-clay" data-testid="vote-out-banner">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h4 className="font-semibold text-clay-800 text-sm">Vote to remove {targetUserName}</h4>
+          <h2 className="font-semibold text-clay-800 text-sm">Vote to remove {targetUserName}</h2>
           <p className="text-xs text-clay-700">
             Started by {initiatedByName} · {yesVotes} of {requiredYesVotes} required yes votes
             {noVotes > 0 && ` · ${noVotes} no`}
