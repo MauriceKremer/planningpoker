@@ -216,7 +216,7 @@ const Session = () => {
   if (error) {
     return (
       <div className="max-w-md mx-auto card p-5">
-        <h2 className="text-xl font-semibold mb-2 text-center text-clay-600">{error}</h2>
+        <h2 role="alert" className="text-xl font-semibold mb-2 text-center text-clay-600">{error}</h2>
         <p className="text-center text-mocha-500 mb-4">This session may have expired, been closed, or the link is invalid.</p>
         <div className="flex justify-center">
           <button onClick={handleGoHome} className="btn btn-secondary py-2 px-4">Go back to main screen</button>
@@ -260,7 +260,7 @@ const Session = () => {
                     Moderator: <span className="font-medium text-mocha-700">{session.moderator}</span>
                     {currentUser?.isModerator && <span className="badge badge-honey ml-1.5">You!</span>}
                   </div>
-                  <button onClick={handleLeaveSession} className="btn btn-quiet text-xs text-clay-600 border-clay-200 hover:bg-clay-50 hover:border-clay-300 px-2.5 py-1" title="Leave this session">Leave Session</button>
+                  <button onClick={handleLeaveSession} className="btn btn-quiet text-xs text-clay-600 border-clay-200 hover:bg-clay-50 hover:border-clay-300 px-2.5 py-1 min-h-[44px]" title="Leave this session">Leave Session</button>
                 </div>
               </div>
               <div className="mt-1.5">
@@ -270,7 +270,7 @@ const Session = () => {
                   <div className="bg-cream-100/80 px-2 py-1 rounded-md border border-cream-300 flex-1 min-w-0">
                     <code className="text-xs text-mocha-600 truncate block">{`${window.location.origin}/session/${sessionId}`}</code>
                   </div>
-                  <button onClick={handleCopyLink} className={`btn btn-quiet px-2 py-1 text-xs ${copySuccess ? '!bg-sage-100 !border-sage-300 !text-sage-700' : 'text-ember-700 hover:bg-ember-50 hover:border-ember-300'}`} title="Copy link to clipboard">
+                  <button onClick={handleCopyLink} className={`btn btn-quiet px-2 py-1 text-xs min-h-[44px] ${copySuccess ? '!bg-sage-100 !border-sage-300 !text-sage-700' : 'text-ember-700 hover:bg-ember-50 hover:border-ember-300'}`} title="Copy link to clipboard">
                     {copySuccess ? <span>✓ Copied!</span> : <span>📋 Copy</span>}
                   </button>
                 </div>
@@ -289,7 +289,7 @@ const Session = () => {
             )}
 
             {session.isVotingOpen && !session.votingComplete && (
-              <div className="card p-4">
+              <div role="status" className="card p-4">
                 <div className="flex items-center">
                   <div className="w-2.5 h-2.5 bg-ember-500 rounded-full animate-pulse mr-2.5"></div>
                   <div><h2 className="font-semibold text-ember-800 text-sm">Voting Round Active</h2><p className="text-xs text-ember-700">Select your estimate below. Votes will be revealed when everyone has voted.</p></div>
@@ -302,12 +302,13 @@ const Session = () => {
                 <h3 className="text-sm font-semibold text-mocha-800 mb-2.5">Participants</h3>
                 <UserList users={session.users} votes={session.votes} votedUserIds={session.votedUserIds || []} votingComplete={session.votingComplete} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onRemoveParticipant={handleRemoveParticipant} onUpdateUserName={handleUpdateUserName} activeVoteOut={session.activeVoteOut} onStartVoteOut={handleStartVoteOut} />
               </div>
-              {session.votingComplete ? (
+              <div aria-live="polite">
+            {session.votingComplete ? (
                 <div className="card p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-base font-semibold text-mocha-800">Voting Results</h3>
                     {currentUser?.isModerator && (
-                      <button onClick={handleResetVotes} className="btn btn-primary px-3 py-1.5 text-xs">
+                      <button onClick={handleResetVotes} className="btn btn-primary px-3 py-1.5 text-xs min-h-[44px]">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                         New Round
                       </button>
@@ -322,7 +323,7 @@ const Session = () => {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-base font-semibold text-mocha-800">Waiting for Voting to Start</h3>
                     {currentUser?.isModerator && (
-                      <button onClick={handleStartVoting} className="btn btn-primary px-3 py-1.5 text-xs">
+                      <button onClick={handleStartVoting} className="btn btn-primary px-3 py-1.5 text-xs min-h-[44px]">
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" /></svg>
                         Start Voting
                       </button>
@@ -331,6 +332,7 @@ const Session = () => {
                   <p className="text-sm text-mocha-500">{currentUser?.isModerator ? "Click 'Start Voting' to begin a new voting round." : 'The moderator will start the voting round when ready.'}</p>
                 </div>
               )}
+            </div>
             </div>
           </div>
         </div>

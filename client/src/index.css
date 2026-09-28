@@ -98,6 +98,30 @@ code {
     monospace;
 }
 
+/* Keyboard focus: one consistent, high-contrast ring everywhere. Buttons and
+   inputs carry their own focus-visible styles; plain links get the same ring
+   via this global rule (the default UA outline is inconsistent across
+   browsers and can vanish on the textured backdrops). */
+a:focus-visible {
+  outline: 2px solid rgb(var(--c-ember-400));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Honor the user's motion preference: kill decorative animations and
+   transitions globally. The notification flash/sound is additionally gated
+   in the socket hook so nothing pulses at all. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* @utility (not @layer components): the badge/panel bases are composed into
    the variants below via @apply, which in v4 only works for utilities. */
 @utility badge {

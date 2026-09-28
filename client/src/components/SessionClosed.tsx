@@ -20,7 +20,7 @@ const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }: Sessio
 
   return (
     <div className="min-h-screen flex items-center justify-center py-6 px-4">
-      <div className="max-w-md w-full card-lg p-7 text-center">
+      <div role="alert" className="max-w-md w-full card-lg p-7 text-center">
           <div className="mb-5">
             <div className="text-5xl mb-3">{userLeft ? '🚪' : '👋'}</div>
             <h1 className="text-xl font-bold text-mocha-800 mb-2">

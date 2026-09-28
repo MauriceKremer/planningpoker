@@ -27,7 +27,7 @@ const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen
         {currentUser?.isModerator && isVotingOpen && (
           <button
             onClick={onStopRound}
-            className="btn btn-quiet text-xs px-2.5 py-1 text-clay-600 border-clay-200 hover:bg-clay-50 hover:border-clay-300"
+            className="btn btn-quiet text-xs px-2.5 py-1 min-h-[44px] text-clay-600 border-clay-200 hover:bg-clay-50 hover:border-clay-300"
           >
             Stop Voting
           </button>

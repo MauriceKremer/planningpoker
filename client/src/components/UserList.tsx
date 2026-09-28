@@ -159,31 +159,35 @@ const UserList = React.memo(({
                       />
                       <button
                         onClick={handleNameSave}
-                        className="text-sage-600 hover:text-sage-700 text-xs"
+                        className="text-sage-600 hover:text-sage-700 text-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
                         title="Save name"
+                        aria-label="Save name"
                       >
                         ✓
                       </button>
                       <button
                         onClick={handleNameCancel}
-                        className="text-clay-600 hover:text-clay-700 text-xs"
+                        className="text-clay-600 hover:text-clay-700 text-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
                         title="Cancel"
+                        aria-label="Cancel editing"
                       >
                         ✕
                       </button>
                     </div>
                   ) : (
-                    <span
-                      className={`text-xs font-medium text-mocha-800 ${
+                    <button
+                      type="button"
+                      className={`text-xs font-medium text-mocha-800 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-ember-400 focus-visible:ring-offset-1 ${
                         currentUser?.id === user.id
                           ? 'cursor-pointer hover:text-ember-700 hover:underline'
-                          : ''
+                          : 'cursor-default'
                       }`}
-                      onClick={() => handleNameClick(user)}
-                      title={currentUser?.id === user.id ? 'Click to edit your name' : ''}
+                      onClick={() => currentUser?.id === user.id && handleNameClick(user)}
+                      disabled={currentUser?.id !== user.id}
+                      title={currentUser?.id === user.id ? 'Click to edit your name' : undefined}
                     >
                       {user.name}
-                    </span>
+                    </button>
                   )}
                   <div className={`w-2 h-2 rounded-full shrink-0 ${user.isOnline ? 'bg-sage-500' : 'bg-cream-400'}`}
                        title={user.isOnline ? 'Online' : 'Offline'} />
@@ -224,8 +228,9 @@ const UserList = React.memo(({
                 {currentUser?.id !== user.id && !activeVoteOut && onStartVoteOut && (
                   <button
                     onClick={() => handleStartVoteOut(user.id)}
-                    className="text-ember-600 hover:text-ember-700 text-sm px-1.5 py-0.5 hover:bg-ember-50 rounded"
+                    className="text-ember-600 hover:text-ember-700 text-sm px-1.5 py-0.5 hover:bg-ember-50 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="Start vote to remove participant"
+                    aria-label={`Start vote to remove ${user.name}`}
                   >
                     🗳️
                   </button>
@@ -234,8 +239,9 @@ const UserList = React.memo(({
                 {currentUser?.isModerator && !user.isModerator && onRemoveParticipant && (
                   <button
                     onClick={() => handleRemoveUser(user.id)}
-                    className="text-clay-600 hover:text-clay-700 text-sm px-1.5 py-0.5 hover:bg-clay-50 rounded"
+                    className="text-clay-600 hover:text-clay-700 text-sm px-1.5 py-0.5 hover:bg-clay-50 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="Remove participant"
+                    aria-label={`Remove ${user.name}`}
                   >
                     ✕
                   </button>

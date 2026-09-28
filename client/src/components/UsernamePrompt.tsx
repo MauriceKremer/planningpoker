@@ -83,7 +83,7 @@ const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }: UsernameProm
         <button
           type="submit"
           disabled={isLoading}
-          className="btn btn-primary w-full py-2 px-4"
+          className="btn btn-primary w-full py-2 px-4 min-h-[44px]"
         >
           {isLoading ? 'Joining...' : 'Join Session'}
         </button>

@@ -113,7 +113,7 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
           <div className="flex flex-wrap items-center justify-center gap-1 mt-2 sm:mt-0 sm:justify-end">
             <button
               onClick={() => setShowTransferModal(true)}
-              className="btn btn-secondary text-xs px-2 py-1"
+              className="btn btn-secondary text-xs px-2 py-1 min-h-[44px]"
               title="Transfer moderator role to another participant"
               disabled={availableParticipants.length === 0}
             >
@@ -122,7 +122,7 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
 
             <button
               onClick={() => setShowCardSetModal(true)}
-              className="btn btn-secondary text-xs px-2 py-1"
+              className="btn btn-secondary text-xs px-2 py-1 min-h-[44px]"
               title="Configure card values for estimation"
             >
               🃏 Cards
@@ -131,7 +131,7 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
             {onTestSound && (
               <button
                 onClick={onTestSound}
-                className="btn btn-quiet text-xs px-2 py-1 text-honey-700 hover:bg-honey-50 hover:border-honey-300"
+                className="btn btn-quiet text-xs px-2 py-1 min-h-[44px] min-w-[44px] text-honey-700 hover:bg-honey-50 hover:border-honey-300"
                 title="Test sound notification for all participants"
               >
                 🔔
@@ -140,7 +140,7 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
 
             <button
               onClick={handleCloseSession}
-              className="btn btn-danger text-xs px-2 py-1"
+              className="btn btn-danger text-xs px-2 py-1 min-h-[44px]"
               title="Close this session for all participants"
               aria-label="Close session"
             >
@@ -156,9 +156,15 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
 
       {/* Card Set Configuration Modal */}
       {showCardSetModal && (
-        <div className="fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="card-lg p-5 max-w-md w-full mx-4">
-            <h3 className="text-base font-semibold text-mocha-800 mb-4">Configure Card Set</h3>
+        <div
+          className="fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="card-set-modal-title"
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowCardSetModal(false); }}
+        >
+          <div className="card-lg p-5 max-w-md w-full mx-4" tabIndex={-1} autoFocus>
+            <h3 id="card-set-modal-title" className="text-base font-semibold text-mocha-800 mb-4">Configure Card Set</h3>
 
             <div className="space-y-3">
               {/* Predefined Sets */}
@@ -233,13 +239,13 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
             <div className="flex space-x-2.5 mt-5">
               <button
                 onClick={handleCardSetUpdate}
-                className="btn btn-primary flex-1 py-2 px-4"
+                className="btn btn-primary flex-1 py-2 px-4 min-h-[44px]"
               >
                 Update Card Set
               </button>
               <button
                 onClick={() => setShowCardSetModal(false)}
-                className="btn btn-quiet flex-1 py-2 px-4"
+                className="btn btn-quiet flex-1 py-2 px-4 min-h-[44px]"
               >
                 Cancel
               </button>
@@ -250,9 +256,15 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
 
       {/* Moderator Transfer Modal */}
       {showTransferModal && (
-        <div className="fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="card-lg p-5 max-w-md w-full mx-4">
-            <h3 className="text-base font-semibold text-mocha-800 mb-4">Transfer Moderator Role</h3>
+        <div
+          className="fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="transfer-modal-title"
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowTransferModal(false); }}
+        >
+          <div className="card-lg p-5 max-w-md w-full mx-4" tabIndex={-1} autoFocus>
+            <h3 id="transfer-modal-title" className="text-base font-semibold text-mocha-800 mb-4">Transfer Moderator Role</h3>
 
             <div className="space-y-3">
               <p className="text-sm text-mocha-500">
@@ -290,14 +302,14 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
                   setShowTransferModal(false);
                   setSelectedParticipant('');
                 }}
-                className="btn btn-quiet flex-1 px-4 py-2"
+                className="btn btn-quiet flex-1 px-4 py-2 min-h-[44px]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleTransferModerator}
                 disabled={!selectedParticipant}
-                className="btn btn-secondary flex-1 px-4 py-2"
+                className="btn btn-secondary flex-1 px-4 py-2 min-h-[44px]"
               >
                 Transfer
               </button>

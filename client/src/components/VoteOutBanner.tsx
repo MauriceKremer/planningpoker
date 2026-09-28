@@ -27,7 +27,7 @@ const VoteOutBanner = ({ activeVoteOut, currentUserId, onVote, onCancel }: VoteO
   const handleVote = (vote: 'yes' | 'no') => () => onVote(vote);
 
   return (
-    <div className="panel-clay" data-testid="vote-out-banner">
+    <div role="alert" className="panel-clay" data-testid="vote-out-banner">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 className="font-semibold text-clay-800 text-sm">Vote to remove {targetUserName}</h2>

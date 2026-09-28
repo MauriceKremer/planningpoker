@@ -78,8 +78,14 @@ const useSessionSocket = ({
     onCurrentUserUpdateRef.current = onCurrentUserUpdate;
   }, [currentUser, sessionId, navigate, onSessionUpdate, onCurrentUserUpdate]);
 
-  // Notify participants that voting started (sound + flash)
+  // Notify participants that voting started (sound + flash). Both are gated
+  // behind the user's motion preference — nothing pulses or plays when the OS
+  // asks for reduced motion.
   const notifyVotingStarted = useCallback(() => {
+    const reducedMotion = typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) return;
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 800);
     try {
