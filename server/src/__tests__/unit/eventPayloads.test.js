@@ -187,7 +187,9 @@ describe('eventPayloads — delta contract', () => {
 
   describe('participantRemoved', () => {
     test('sends removed user id, object and remover name', () => {
-      const removed = { id: 'user-3', name: 'Charlie', isModerator: false };
+      // Contract shape (client `protocol/events.ts` userSchema): id, name,
+      // isModerator, isOnline required; bookkeeping fields optional.
+      const removed = { id: 'user-3', name: 'Charlie', isModerator: false, isOnline: false };
       const payload = participantRemoved('user-3', removed, 'Alice');
       expect(payload).not.toHaveProperty('session');
       expect(payload).toEqual({ userId: 'user-3', user: removed, removedBy: 'Alice' });

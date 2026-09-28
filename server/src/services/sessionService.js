@@ -156,7 +156,10 @@ const joinSession = (sessionId, userName) => {
     const userId = uuidv4();
     const now = new Date().toISOString();
     createdUser = {
-      id: userId, name: userName, isOnline: false, lastSeen: now, joinedAt: now,
+      // `isModerator` is part of the shared socket contract (client
+      // `protocol/events.ts` `userSchema` requires it); participants join as
+      // non-moderators and only a transfer flips the flag.
+      id: userId, name: userName, isModerator: false, isOnline: false, lastSeen: now, joinedAt: now,
     };
     session.users[userId] = createdUser;
   });

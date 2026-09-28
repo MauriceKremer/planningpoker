@@ -11,7 +11,13 @@
  * `utils/sessionDelta.js`). This avoids re-serializing and fanning out
  * the full session on every vote — the root cause of the "resources
  * hammered when voting starts" regression.
+ *
+ * M5.2: every payload a builder produces is validated against the shared
+ * socket contract (`src/protocol/eventSchemas.js`) at construction time —
+ * fail-fast, so a contract violation surfaces as an `error` event instead of
+ * broadcasting a delta that would silently corrupt client state.
  */
+const { assertOutgoing } = require('../protocol/eventSchemas');
 
 /** Number of keys in an object (null/undefined safe). */
 const keyCount = (obj) => (obj ? Object.keys(obj).length : 0);
@@ -148,17 +154,24 @@ const voteOutEnded = (session, targetUserId, removed, reason, removedUser = null
   user: removed ? (session.users[targetUserId] || removedUser) : undefined,
 });
 
+/**
+ * Builds the payload for `event` and validates it against the shared socket
+ * contract. Throwing on violation is deliberate (fail-fast near the bug); the
+ * emitting handler's catch turns it into an `error` event.
+ */
+const build = (event, make) => (...args) => assertOutgoing(event, make(...args));
+
 module.exports = {
-  voteSubmitted,
-  voteAccepted,
-  votesReset,
-  votingStarted,
-  roundStopped,
-  cardSetUpdated,
-  moderatorChanged,
-  userNameUpdated,
-  participantRemoved,
-  voteOutStarted,
-  voteOutCast,
-  voteOutEnded,
+  voteSubmitted: build('vote-submitted', voteSubmitted),
+  voteAccepted: build('vote-accepted', voteAccepted),
+  votesReset: build('votes-reset', votesReset),
+  votingStarted: build('voting-started', votingStarted),
+  roundStopped: build('round-stopped', roundStopped),
+  cardSetUpdated: build('card-set-updated', cardSetUpdated),
+  moderatorChanged: build('moderator-changed', moderatorChanged),
+  userNameUpdated: build('user-name-updated', userNameUpdated),
+  participantRemoved: build('participant-removed', participantRemoved),
+  voteOutStarted: build('vote-out-started', voteOutStarted),
+  voteOutCast: build('vote-out-cast', voteOutCast),
+  voteOutEnded: build('vote-out-ended', voteOutEnded),
 };

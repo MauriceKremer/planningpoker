@@ -7,6 +7,7 @@ const { transferModeratorRole } = require('../socket/moderator');
 const payloads = require('../socket/eventPayloads');
 const { applyCleanup } = require('../socket/cleanupPolicy');
 const { createVoteOut, castVoteOutVote, pruneVoteOutForRemovedUser, expireIfStale, VOTE_OUT_THRESHOLD_PERCENT, VOTE_OUT_TIMEOUT_MS } = require('../socket/voteOut');
+const { assertOutgoing } = require('../protocol/eventSchemas');
 
 const SPECIAL_VOTES = ['☕', '❓'];
 
@@ -118,7 +119,7 @@ const setupSocketEvents = (io, options = {}) => {
         if (existingSocketId && existingSocketId !== socket.id) {
           const existingSocket = io.sockets.sockets.get(existingSocketId);
           if (existingSocket) {
-            existingSocket.emit('connection-conflict', { message: 'Your session has been accessed from another location. You have been disconnected.' });
+            existingSocket.emit('connection-conflict', assertOutgoing('connection-conflict', { message: 'Your session has been accessed from another location. You have been disconnected.' }));
             existingSocket.disconnect(true);
           }
           untrackConnection(existingSocketId);
@@ -136,8 +137,8 @@ const setupSocketEvents = (io, options = {}) => {
           user.isOnline = true;
         });
 
-        socket.emit('session-joined', { session: sanitizeSession(session, userId) });
-        socket.to(sessionId).emit('user-joined', { user: session.users[userId] });
+        socket.emit('session-joined', assertOutgoing('session-joined', { session: sanitizeSession(session, userId) }));
+        socket.to(sessionId).emit('user-joined', assertOutgoing('user-joined', { user: session.users[userId] }));
       } catch (error) {
         socket.emit('error', { message: error.message });
       }
@@ -268,7 +269,7 @@ const setupSocketEvents = (io, options = {}) => {
       try {
         const session = await getSession(sessionId);
         if (session.moderatorId !== userId) return socket.emit('error', { message: 'Only the moderator can test sound' });
-        io.to(sessionId).emit('test-sound-trigger', { triggeredBy: session.users[userId].name });
+        io.to(sessionId).emit('test-sound-trigger', assertOutgoing('test-sound-trigger', { triggeredBy: session.users[userId].name }));
       } catch (error) {
         socket.emit('error', { message: error.message });
       }
@@ -357,18 +358,18 @@ const setupSocketEvents = (io, options = {}) => {
         if (session.moderatorId !== moderatorId) return socket.emit('error', { message: 'Only the moderator can close the session' });
 
         const closedAt = new Date().toISOString();
-        io.to(sessionId).emit('session-closed', { sessionTitle: session.title, moderatorName: session.moderator, closedAt });
+        io.to(sessionId).emit('session-closed', assertOutgoing('session-closed', { sessionTitle: session.title, moderatorName: session.moderator, closedAt }));
         // The acting socket may have reconnected and not yet re-joined the room
         // (join-session can race close-session after a transport blip); the
         // room broadcast above then misses it. Confirm directly to it as well.
-        socket.emit('session-closed', { sessionTitle: session.title, moderatorName: session.moderator, closedAt });
+        socket.emit('session-closed', assertOutgoing('session-closed', { sessionTitle: session.title, moderatorName: session.moderator, closedAt }));
         deleteSession(sessionId);
 
         // Disconnect all sockets in this session
         if (activeConnections.has(sessionId)) {
           activeConnections.get(sessionId).forEach(sId => {
             const s = io.sockets.sockets.get(sId);
-            if (s) { try { s.leave(sessionId); s.emit('session-closed', { sessionTitle: session.title, moderatorName: session.moderator }); } catch(e) {} }
+            if (s) { try { s.leave(sessionId); s.emit('session-closed', assertOutgoing('session-closed', { sessionTitle: session.title, moderatorName: session.moderator })); } catch(e) {} }
           });
         }
         untrackSession(sessionId);
@@ -453,7 +454,7 @@ const setupSocketEvents = (io, options = {}) => {
         }
 
         const targetSocketId = getSocketForUser(sessionId, targetUserId);
-        if (targetSocketId) io.to(targetSocketId).emit('you-were-removed', { reason: 'Removed by moderator', removedBy: session.users[userId].name });
+        if (targetSocketId) io.to(targetSocketId).emit('you-were-removed', assertOutgoing('you-were-removed', { reason: 'Removed by moderator', removedBy: session.users[userId].name }));
       } catch (error) {
         socket.emit('error', { message: error.message });
       }
@@ -494,7 +495,7 @@ const setupSocketEvents = (io, options = {}) => {
 
         socket.to(sessionId).emit('participant-removed',
           payloads.participantRemoved(userId, leavingUser, leavingUser.name));
-        socket.emit('leave-acknowledged', { sessionId });
+        socket.emit('leave-acknowledged', assertOutgoing('leave-acknowledged', { sessionId }));
 
         if (voteOutPruned && voteOutPruned.outcome !== 'unchanged') {
           socket.to(sessionId).emit('vote-out-ended',
@@ -595,7 +596,7 @@ const setupSocketEvents = (io, options = {}) => {
             payloads.participantRemoved(targetUserId, outcome.removedUser, session.users[userId]?.name || 'Participants'));
 
           const targetSocketId = getSocketForUser(sessionId, targetUserId);
-          if (targetSocketId) io.to(targetSocketId).emit('you-were-removed', { reason: 'Removed by participant vote', removedBy: session.users[userId]?.name || 'Participants' });
+          if (targetSocketId) io.to(targetSocketId).emit('you-were-removed', assertOutgoing('you-were-removed', { reason: 'Removed by participant vote', removedBy: session.users[userId]?.name || 'Participants' }));
 
           if (outcome.moderatorTransfer) {
             io.to(sessionId).emit('moderator-changed',
@@ -685,7 +686,7 @@ const setupSocketEvents = (io, options = {}) => {
         });
 
         if (userStillExists) {
-          socket.to(sessionId).emit('user-disconnected', { userId, user: session.users[userId], wasModeratorTransferred: false });
+          socket.to(sessionId).emit('user-disconnected', assertOutgoing('user-disconnected', { userId, user: session.users[userId] }));
         }
       } catch (error) { /* session expired */ }
     });
@@ -721,7 +722,13 @@ const cleanupInactiveSessions = async (io) => {
       });
 
       for (const { event, data } of result.events) {
-        io.to(sessionId).emit(event, data);
+        try {
+          io.to(sessionId).emit(event, assertOutgoing(event, data));
+        } catch (cleanupError) {
+          // A contract-violating delta is never broadcast; log loudly (the
+          // rest of this session's cleanup events still go out).
+          logger.error(`Cleanup broadcast '${event}' rejected:`, cleanupError.message);
+        }
       }
 
       if (result.shouldDelete) toDelete.push(sessionId);
