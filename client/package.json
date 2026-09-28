@@ -14,7 +14,7 @@
   "scripts": {
     "start": "vite",
     "prebuild": "node scripts/sync-season-meta.mjs && node scripts/generate-theme-css.mjs",
-    "build": "vite build && node scripts/prerender.mjs",
+    "build": "vite build && node scripts/prerender.mjs && node scripts/generate-sw.mjs",
     "postbuild": "node scripts/verify-build.mjs",
     "preview": "vite preview",
     "test": "vitest run",
@@ -50,7 +50,8 @@
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.70.1",
     "vite": "^7.0.0",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "workbox-build": "^7.4.1"
   },
   "type": "module"
 }

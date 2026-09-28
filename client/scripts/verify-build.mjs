@@ -18,6 +18,10 @@
  *     shell for /session/*.
  *  4. Every asset referenced by index.html exists on disk.
  *  5. Every image referenced by themes.json exists in build/images/.
+ *  6. The M7 PWA output: manifest.webmanifest is valid and complete
+ *     (installability members + icons on disk), sw.js exists, is
+ *     self-contained (no cross-origin importScripts) and its precache
+ *     manifest references only files that actually exist in build/.
  *
  * Exits non-zero with a clear message on the first violation.
  */
@@ -75,6 +79,12 @@ const requiredFiles = [
   'robots.txt',
   'sitemap.xml',
   '.well-known/ai-catalog.json',
+  'manifest.webmanifest',
+  'sw.js',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/maskable-512.png',
+  'icons/apple-touch-icon.png',
   'images/og-image.jpg',
   'images/twitter-card.jpg',
 ];
@@ -117,6 +127,8 @@ for (const f of htmlFiles) {
   check(/data-prerender="true"/.test(h), `${f}: pre-rendered head tagged for runtime cleanup`);
   check(/<link rel="icon" href="\/favicon\.svg"/.test(h), `${f}: SVG favicon referenced`);
   check(/<link rel="ai-catalog"/.test(h), `${f}: ai-catalog link tag present`);
+  check(/<link rel="manifest" href="\/manifest\.webmanifest"/.test(h), `${f}: manifest link tag present`);
+  check(/<link rel="apple-touch-icon" href="\/icons\/apple-touch-icon\.png"/.test(h), `${f}: apple-touch-icon link tag present`);
   check(/type="application\/ld\+json"/.test(h), `${f}: JSON-LD structured data present`);
 }
 
@@ -160,6 +172,63 @@ const themes = JSON.parse(readFileSync(join(root, 'src', 'theme', 'themes.json')
 for (const theme of themes) {
   const file = (theme.backdrop || '').split('/').pop();
   if (file) check(existsSync(join(build, 'images', file)), `theme backdrop present: ${file}`);
+}
+
+// 6. M7 PWA contract — manifest completeness and SW precache integrity.
+const manifestPath = join(build, 'manifest.webmanifest');
+if (existsSync(manifestPath)) {
+  try {
+    const m = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    check(typeof m.name === 'string' && m.name.length > 0, 'manifest: name present');
+    check(typeof m.short_name === 'string' && m.short_name.length > 0, 'manifest: short_name present');
+    check(m.start_url === '/', 'manifest: start_url /');
+    check(m.scope === '/', 'manifest: scope /');
+    check(['standalone', 'fullscreen', 'minimal-ui'].includes(m.display), 'manifest: installable display mode');
+    check(/^#[0-9a-fA-F]{6}$/.test(m.theme_color || ''), 'manifest: theme_color present');
+    check(/^#[0-9a-fA-F]{6}$/.test(m.background_color || ''), 'manifest: background_color present');
+    const icons = Array.isArray(m.icons) ? m.icons : [];
+    for (const size of [192, 512]) {
+      const icon = icons.find((i) => i.sizes === `${size}x${size}` && String(i.purpose || 'any').includes('any'));
+      check(Boolean(icon), `manifest: ${size}px any icon declared`);
+      if (icon) {
+        const p = icon.src.startsWith('/') ? icon.src.slice(1) : icon.src;
+        check(existsSync(join(build, p)), `manifest: icon on disk: ${icon.src}`);
+      }
+    }
+    check(icons.some((i) => i.purpose === 'maskable'), 'manifest: maskable icon declared');
+  } catch (e) {
+    check(false, `manifest: valid JSON (${e.message})`);
+  }
+}
+
+const swPath = join(build, 'sw.js');
+if (existsSync(swPath)) {
+  const sw = readFileSync(swPath, 'utf-8');
+  // CSP/CORS hard gate: the SW is a same-origin classic script and must stay
+  // self-contained — Workbox generateSW with inlineWorkboxRuntime inlines the
+  // whole runtime, so any importScripts (let alone a cross-origin one) means
+  // the strategy drifted. Cross-origin SCRIPT urls are equally forbidden.
+  // (A plain "https://" text check would false-positive on the Workbox
+  // console.warn message string baked into the runtime.)
+  check(!/importScripts\s*\(/.test(sw), 'sw.js: self-contained, no importScripts');
+  check(!/https?:\/\/[^"'\s]+\.(js|mjs)/.test(sw), 'sw.js: no cross-origin script URLs');
+  // The minifier passes the fallback URL through a variable, so assert by
+  // presence: the handler call plus the literal "app.html" URL.
+  check(/createHandlerBoundToURL\s*\(/.test(sw) && /["']\/?app\.html["']/.test(sw), 'sw.js: navigateFallback binds app.html');
+  // SEO guard: /, /about and /join must be denylisted from the navigation
+  // fallback, or returning visitors (and JS-running crawlers) would get the
+  // cached noindex shell instead of the M3 pre-rendered HTML from nginx.
+  check(/denylist:\[[^\]]*about/.test(sw), 'sw.js: navigation fallback denylisted for /, /about, /join');
+  // Every precached URL must exist in build/ — an SW precaching a dead URL
+  // would 404 offline and leave clients with a broken shell after deploys.
+  // Minified shape: {revision:"…",url:"…"} (object keys are unquoted).
+  const urls = [...sw.matchAll(/url:\s*"([^"]+)"/g)].map((m) => m[1]);
+  check(urls.length > 0, 'sw.js: precache manifest present');
+  for (const u of urls) {
+    const p = u.startsWith('/') ? u.slice(1) : u;
+    check(existsSync(join(build, decodeURIComponent(p))), `sw.js: precached file exists: ${u}`);
+  }
+  check(!urls.some((u) => u.startsWith('/images/')), 'sw.js: decorative images NOT precached (kept lean)');
 }
 
 // Report.

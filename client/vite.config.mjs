@@ -12,6 +12,15 @@ import tailwindcss from '@tailwindcss/vite';
 // - single bundle, no inline scripts: the strict CSP in nginx/nginx.conf
 //   (script-src 'self', no unsafe-inline) was verified against that shape —
 //   scripts/verify-build.mjs enforces it on every build.
+//
+// M7 PWA: the precaching service worker is generated AFTER this build by
+// scripts/generate-sw.mjs (npm "build" chain: vite build → prerender →
+// generate-sw). It must run after scripts/prerender.mjs — the SW precaches
+// app.html and the pre-rendered pages, which only exist then. Registration
+// lives in the bundle (src/index.tsx), NOT as an injected <script>: the CSP
+// allows only external scripts and the build contract pins the script
+// inventory. sw.js itself is same-origin and self-contained (Workbox runtime
+// inlined, no importScripts) — no CSP change.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {

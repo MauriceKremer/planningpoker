@@ -47,6 +47,14 @@
     <!-- Agentic Resource Discovery manifest (ARD) -->
     <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
 
+    <!-- PWA web app manifest + iOS home-screen icon (M7). The service worker
+         itself is registered from the bundle (src/index.tsx) — registration is
+         deliberately NOT injected as a separate script tag, because the strict
+         CSP allows only external scripts and scripts/verify-build.mjs enforces
+         the exact script inventory of every HTML entry point. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
     <!-- Additional SEO -->
     <meta name="application-name" content="Planning Poker" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
