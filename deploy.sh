@@ -54,16 +54,21 @@ for file in "${required_files[@]}"; do
 done
 echo -e "${GREEN}✅ All required files present${NC}"
 
-# Create dockerdata directory for persistent storage
-echo -e "${BLUE}📁 Creating dockerdata directories...${NC}"
-mkdir -p dockerdata/client-build
-echo -e "${GREEN}✅ dockerdata directories created${NC}"
-
 # Check if ports are available
 echo -e "${BLUE}🔍 Checking if port 4080 is available...${NC}"
 if netstat -tuln 2>/dev/null | grep -q ":4080 " || ss -tuln 2>/dev/null | grep -q ":4080 "; then
     echo -e "${YELLOW}⚠️  Port 4080 is already in use. Existing containers will be stopped.${NC}"
 fi
+
+# Preserve the currently running images for scripts/rollback.sh. The first
+# deploy has nothing to roll back to yet.
+echo -e "${BLUE}🏷️  Tagging current images as :previous for rollback...${NC}"
+for image in planningpoker-nginx planningpoker-server; do
+    if docker image inspect "${image}:current" >/dev/null 2>&1; then
+        docker tag "${image}:current" "${image}:previous"
+        echo -e "${GREEN}✅ ${image}:previous preserved${NC}"
+    fi
+done
 
 echo -e "${BLUE}🛑 Stopping existing containers...${NC}"
 docker compose -f docker-compose.prod.yml down --remove-orphans || true
@@ -71,7 +76,10 @@ docker compose -f docker-compose.prod.yml down --remove-orphans || true
 # Build and start services
 echo -e "${BLUE}🔨 Building Docker images...${NC}"
 echo -e "${YELLOW}This may take a few minutes on first run...${NC}"
-docker compose -f docker-compose.prod.yml build --no-cache
+# No --no-cache: the Dockerfiles layer package manifests before source, so a
+# rebuild reuses npm ci when dependencies did not change and busts every layer
+# below when they did.
+docker compose -f docker-compose.prod.yml build
 
 echo -e "${BLUE}🚀 Starting services...${NC}"
 docker compose -f docker-compose.prod.yml up -d

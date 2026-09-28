@@ -10,13 +10,16 @@ in-memory / no-Redis / no-SQLite architecture (commit `e687d9d` and later).
 
 ## Architecture (what's actually running)
 
-Three Docker containers, started by `docker-compose.prod.yml`:
+Two Docker containers, started by `docker-compose.prod.yml`:
 
 | Container             | Image                  | Role                                      | Port            |
 |-----------------------|------------------------|-------------------------------------------|-----------------|
 | `planningpoker-server` | built from `server/`   | Node.js API + Socket.IO (in-memory session store) | 8081 (internal) |
-| `planningpoker-nginx`  | `nginx:alpine`         | Serves the built client + reverse-proxies `/api` and `/socket.io` to the server | 4080 → 80 |
-| `planningpoker-client` | built from `client/`   | Build-only: produces static files copied into the nginx volume | — |
+| `planningpoker-nginx`  | built from `nginx/` + `client/` source | Serves the client bundle baked into the image + reverse-proxies `/api` and `/socket.io` to the server | 4080 → 80 |
+
+The static client build is compiled **inside the nginx image** (`nginx/Dockerfile` takes the
+`client/` source as a named build context). One image ships nginx, config and the exact
+static build — no build-only container, no `dockerdata/client-build` bind mount.
 
 - **No Redis, no SQLite, no native modules.** Sessions live in a process-local `Map` in the
   Node server for the life of the process. The `better-sqlite3` dependency and its native
@@ -155,11 +158,15 @@ docker compose -f docker-compose.prod.yml restart server
 # Stop the whole stack
 docker compose -f docker-compose.prod.yml down --remove-orphans
 
-# Reset everything (removes volumes too) and redeploy from scratch
+# Reset everything and redeploy from scratch
 docker compose -f docker-compose.prod.yml down -v
 ./deploy.sh
 
-# Roll back to a previous commit
+# Roll back to the previous deployment (no rebuild — deploy.sh tags the
+# running images as :previous before every rebuild)
+./scripts/rollback.sh
+
+# Roll back to a specific older commit (rare; rebuilds)
 git pull && git checkout <previous-commit>
 ./deploy.sh
 # then: git checkout main   # to return to the branch tip

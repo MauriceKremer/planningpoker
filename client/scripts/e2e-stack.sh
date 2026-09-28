@@ -13,10 +13,6 @@ COMPOSE="docker compose -f ../docker-compose.prod.yml -f docker-compose.e2e.yml"
 
 case "${1:-up}" in
   up)
-    # The client copy-container merges files into the bind mount; start from a
-    # clean web root so stale hashed assets from old builds can never be served.
-    rm -rf ../dockerdata/client-build
-
     # Drift check: nginx/nginx-e2e.conf (committed) must equal the production
     # conf except for the raised rate limits and its header comment. Without
     # this check a production nginx change could silently go untested.

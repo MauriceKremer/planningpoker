@@ -3,6 +3,7 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile.prod
+    image: planningpoker-server:current
     container_name: planningpoker-server
     restart: unless-stopped
     environment:
@@ -18,22 +19,20 @@ services:
     networks:
       - planningpoker-network
 
-  client:
+  nginx:
     build:
-      context: ./client
+      context: ./nginx
       dockerfile: Dockerfile
+      # The client source is a named build context: the client bundle is
+      # compiled inside the nginx image itself (nginx/Dockerfile), so one
+      # image ships nginx + config + the exact static build. No copy
+      # container, no dockerdata/client-build bind mount.
+      additional_contexts:
+        client: ./client
       args:
         - VITE_API_URL=https://planningpoker.bytecoder.nl/api
         - VITE_SOCKET_URL=https://planningpoker.bytecoder.nl
-    container_name: planningpoker-client
-    restart: unless-stopped
-    volumes:
-      - ./dockerdata/client-build:/output
-    networks:
-      - planningpoker-network
-
-  nginx:
-    image: nginx:alpine
+    image: planningpoker-nginx:current
     container_name: planningpoker-nginx
     restart: unless-stopped
     ports:
@@ -41,12 +40,9 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/nginx-main.conf:/etc/nginx/nginx.conf:ro
-      - ./dockerdata/client-build:/usr/share/nginx/html:ro
     depends_on:
       server:
         condition: service_healthy
-      client:
-        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
