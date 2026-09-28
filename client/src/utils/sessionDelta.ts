@@ -130,7 +130,6 @@ const applyEventInput = (prev: SessionState, input: EventInput): SessionState =>
       return { ...prev, activeVoteOut: null };
 
     case 'user-joined':
-    case 'user-status-changed':
       return { ...prev, users: { ...prev.users, [data.user.id]: data.user } };
 
     case 'user-disconnected':

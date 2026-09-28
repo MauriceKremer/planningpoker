@@ -131,9 +131,6 @@ export const voteOutEndedSchema = z
 
 export const userJoinedSchema = z.object({ user: userSchema });
 
-/** A participant's status changed (e.g. disconnected/reconnected). */
-export const userStatusChangedSchema = z.object({ user: userSchema });
-
 export const userDisconnectedSchema = z.object({
    userId: z.string(),
    user: userSchema,
@@ -220,7 +217,6 @@ export const eventSchemas = {
    'vote-out-cast': voteOutCastSchema,
    'vote-out-ended': voteOutEndedSchema,
    'user-joined': userJoinedSchema,
-   'user-status-changed': userStatusChangedSchema,
    'user-disconnected': userDisconnectedSchema,
    'user-countdown': userCountdownSchema,
    'user-name-updated': userNameUpdatedSchema,
@@ -272,7 +268,6 @@ export const eventValidators = {
    'vote-out-cast': voteOutCastSchema,
    'vote-out-ended': voteOutEndedSchema,
    'user-joined': userJoinedSchema,
-   'user-status-changed': userStatusChangedSchema,
    'user-disconnected': userDisconnectedSchema,
    'user-countdown': userCountdownSchema,
    'user-name-updated': userNameUpdatedSchema,
