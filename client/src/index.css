@@ -93,6 +93,15 @@ body {
   line-height: 1.6;
 }
 
+/* Reserve the viewport height before React mounts. The SPA shell starts
+   empty; without this, the whole body grows from ~0 to 100vh at mount and
+   the initial paint registers as a layout shift (the only CLS source on
+   /session — round transitions shift nothing, verified with a
+   PerformanceObserver probe across a full round). */
+#root {
+  min-height: 100vh;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

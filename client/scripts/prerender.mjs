@@ -49,7 +49,13 @@ const ROUTES = [
 const SHELL_HEAD =
   '<title>Planning Poker Session</title>' +
   '<meta name="description" content="A live Planning Poker estimation session." />' +
-  '<meta name="robots" content="noindex, nofollow" />';
+  '<meta name="robots" content="noindex, nofollow" />' +
+  // Session rooms are taller than the viewport, so their scrollbar appears as
+  // soon as React mounts — and Chromium flickers the gutter during load
+  // (body width 1264 -> 1280), which registered as the shell's layout shift.
+  // Reserving the gutter from first paint (style-src permits inline styles)
+  // keeps the width constant; session pages always use it.
+  '<style>html{scrollbar-gutter:stable}</style>';
 
 function injectBetween(html, start, end, content) {
   const startIdx = html.indexOf(start);
@@ -80,6 +86,12 @@ function buildPage(template, { head, body }) {
   let page = injectBetween(template, SEO_START, SEO_END, renderHead(head));
   if (body != null) {
     page = injectBetween(page, PRERENDER_START, PRERENDER_END, `\n${body}\n    `);
+  } else {
+    // Pure-SPA shell (session rooms, unknown routes): the static markup is
+    // empty, so reserve the viewport height inline — before this, the body
+    // sat at ~18px until the stylesheet applied and React mounted, and that
+    // jump registered as the shell's layout shift.
+    page = page.replace('<div id="root">', '<div id="root" style="min-height:100vh">');
   }
   return page;
 }

@@ -103,7 +103,12 @@
         routes). The public pages are replaced by scripts/prerender.mjs with
         fully pre-rendered HTML; React replaces whatever is here on mount.
       -->
-      <p style="max-width: 40rem; margin: 2rem auto; padding: 0 1rem; text-align: center; font-family: system-ui, sans-serif; color: #3E2723;">
+      <!--
+        The loader is position:fixed on purpose: it must not contribute to the
+        document flow, or its removal on mount shifts the whole body (the
+        only layout shift on /session).
+      -->
+      <p style="position: fixed; inset: 0; display: grid; place-items: center; text-align: center; font-family: system-ui, sans-serif; color: #3E2723;">
         Loading Planning Poker…
       </p>
     <!-- prerender:end --></div>

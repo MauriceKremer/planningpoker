@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSession } from '../utils/api';
 import {
@@ -8,6 +8,7 @@ import {
 } from '../utils/sessionStorage';
 import useSessionSocket from '../hooks/useSessionSocket';
 import { stopHeartbeat } from '../utils/socket';
+import { applyEvent } from '../utils/sessionDelta';
 import type { SessionState, SessionUser, Updater } from '../protocol/session';
 import VotingCards from '../components/VotingCards';
 import UserList from '../components/UserList';
@@ -111,22 +112,95 @@ const Session = () => {
     }
   };
 
+  // Optimistic-UI bookkeeping: the snapshot taken just before an unconfirmed
+  // local mutation. The confirming socket event clears it; the plain 'error'
+  // reply (e.g. rejected vote, failed round start) restores the snapshot, so
+  // the UI never sticks on a state the server refused. A short timeout is
+  // the backstop — any authoritative broadcast reconciles afterwards anyway.
+  const optimisticRef = useRef<{ snapshot: SessionState } | null>(null);
+
+  useEffect(() => {
+    if (!socket) return;
+    const confirm = () => { optimisticRef.current = null; };
+    const rollback = () => {
+      const pending = optimisticRef.current;
+      if (!pending) return;
+      optimisticRef.current = null;
+      setSession(pending.snapshot);
+    };
+    socket.on('vote-accepted', confirm);
+    socket.on('vote-submitted', confirm);
+    socket.on('voting-started', confirm);
+    socket.on('votes-reset', confirm);
+    socket.on('error', rollback);
+    return () => {
+      socket.off('vote-accepted', confirm);
+      socket.off('vote-submitted', confirm);
+      socket.off('voting-started', confirm);
+      socket.off('votes-reset', confirm);
+      socket.off('error', rollback);
+    };
+  }, [socket]);
+
+  // Stage an optimistic mutation: remember the pre-mutation snapshot and
+  // self-expire the pending state so a lost reply cannot wedge the UI.
+  const stage = useCallback((snapshot: SessionState) => {
+    optimisticRef.current = { snapshot };
+    setTimeout(() => {
+      if (optimisticRef.current?.snapshot === snapshot) optimisticRef.current = null;
+    }, 2500);
+  }, []);
+
   const handleVote = useCallback((vote: string) => {
-    if (socket && currentUser) {
-      setSession(prev => (prev ? { ...prev, votes: { ...prev.votes, [currentUser.id]: vote } } : prev));
-      socket.emit('submit-vote', { sessionId, userId: currentUser.id, vote });
-    }
-  }, [socket, currentUser, sessionId]);
+    if (!socket || !currentUser) return;
+    setSession(prev => {
+      if (!prev || !prev.isVotingOpen || prev.votingComplete) return prev;
+      stage(prev);
+      // Render the selection before the server answers: own card value, the
+      // voted marker, and — when this vote completes the round — the reveal.
+      // The authoritative vote-submitted / vote-accepted delta replaces this;
+      // the socket 'error' reply rolls it back.
+      const userCount = Object.keys(prev.users).length;
+      const alreadyVoted = (prev.votedUserIds ?? []).includes(currentUser.id);
+      const votingComplete = userCount > 0
+        && (prev.votedUserIds?.length ?? 0) + (alreadyVoted ? 0 : 1) >= userCount;
+      let next = applyEvent(prev, 'vote-accepted', {
+        userId: currentUser.id, vote, votingComplete: false, isVotingOpen: true,
+      });
+      next = applyEvent(next, 'vote-submitted', {
+        userId: currentUser.id, hasVoted: true,
+        votingComplete, isVotingOpen: true,
+        votes: null,
+        votedUserIds: [...(prev.votedUserIds ?? []), currentUser.id],
+      });
+      return next;
+    });
+    socket.emit('submit-vote', { sessionId, userId: currentUser.id, vote });
+  }, [socket, currentUser, sessionId, stage]);
 
   const handleResetVotes = useCallback(() => {
-    if (socket) {
-      socket.emit('reset-votes', { sessionId });
-    }
-  }, [socket, sessionId]);
+    if (!socket) return;
+    setSession(prev => {
+      if (!prev || !prev.votingComplete) return prev;
+      stage(prev);
+      return applyEvent(prev, 'votes-reset', {
+        isVotingOpen: true, votingComplete: false, votes: {},
+      });
+    });
+    socket.emit('reset-votes', { sessionId });
+  }, [socket, sessionId, stage]);
 
   const handleStartVoting = useCallback(() => {
-    if (socket && currentUser) socket.emit('start-voting', { sessionId, userId: currentUser.id });
-  }, [socket, currentUser, sessionId]);
+    if (!socket || !currentUser) return;
+    setSession(prev => {
+      if (!prev || prev.isVotingOpen) return prev;
+      stage(prev);
+      return applyEvent(prev, 'voting-started', {
+        isVotingOpen: true, votingComplete: false, votes: {},
+      });
+    });
+    socket.emit('start-voting', { sessionId, userId: currentUser.id });
+  }, [socket, currentUser, sessionId, stage]);
 
   const handleStopRound = useCallback(() => {
     if (socket && currentUser?.isModerator) socket.emit('stop-round', { sessionId, userId: currentUser.id });
