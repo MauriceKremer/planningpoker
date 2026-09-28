@@ -1,0 +1,47 @@
+{
+  // M5 — TypeScript foundation.
+  //
+  // Strict from day one (plan rule 5: `strict: true` from the start, no `any`,
+  // no unbacked `@ts-ignore`/`eslint-disable`). Migration is deliberate, not
+  // big-bang: we convert domain-first (socket protocol → reducer → hooks →
+  // components → pages), leaving the existing `.js`/`.jsx` untouched until their
+  // layer's turn. `allowJs` lets TS see the JS the new `.ts` files import;
+  // `checkJs: false` means we don't drown in a flood of warnings on every
+  // unmigrated file — the gate (`tsc --noEmit`) strictly checks only the code
+  // we've moved into `.ts`/`.tsx`, which is exactly where new code must be clean.
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "types": []
+  },
+  // Test files are exercised by Vitest (its own type environment); the app gate
+  // checks production `.ts`/`.tsx`. The pre-render entry uses Node + react-dom/
+  // server APIs and is migrated in a later M5 step.
+  "include": ["src"],
+  "exclude": [
+    "src/**/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/prerender/**",
+    "build",
+    "node_modules"
+  ]
+}

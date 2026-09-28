@@ -3,77 +3,103 @@
  *
  * SOLID — Single Responsibility: merge a server delta into the local
  *   session state. Pure, no React, no socket I/O.
- * DRY    — one function is the single source of truth for how each event
+ * DRY     — one function is the single source of truth for how each event
  *   mutates local state; the socket hook just dispatches to it.
- * KISS   — plain switch over event names; immutable shallow updates.
+ * KISS    — plain switch over event names; immutable shallow updates.
  *
  * The server now broadcasts minimal deltas (see server
  * `socket/eventPayloads.js`) instead of the full session object, so the
  * client reconstructs state locally. `session-joined` (the initial full
  * state load) is handled directly in the hook and is NOT routed here.
+ *
+ * M5: the reducer switches over the discriminated `EventInput` union — each
+ * branch narrows to that event's exact payload (typed from the zod schemas in
+ * `../protocol/events`). The public `applyEvent(prev, event, data)` keeps its
+ * historical 3-arg shape so existing call sites and tests are untouched; it is
+ * a thin façade over the fully-typed `applyEventInput`.
  */
+import { type EventInput, type EventName, type EventPayload } from '../protocol/events';
+import type { SessionState } from '../protocol/session';
 
-const applyEvent = (prev, event, data) => {
-  switch (event) {
+/**
+ * The fully-typed reducer core. Switching over the bundled discriminated union
+ * lets TypeScript narrow `input.data` to each event's exact payload — the
+ * compile-time contract check across every case.
+ */
+const applyEventInput = (prev: SessionState, input: EventInput): SessionState => {
+   const { event, data } = input;
+   switch (event) {
     case 'vote-submitted': {
-      // While voting is open the payload carries WHO has voted (ids only) —
-      // never card values. Values are only revealed via the complete map.
+        // While voting is open the payload carries WHO has voted (ids only) —
+        // never card values. Values are only revealed via the complete map.
       const votedUserIds = data.votingComplete && data.votes
-        ? Object.keys(data.votes)
-        : (Array.isArray(data.votedUserIds) ? [...data.votedUserIds] : (prev.votedUserIds || []));
+          ? Object.keys(data.votes)
+          : (Array.isArray(data.votedUserIds) ? [...data.votedUserIds] : (prev.votedUserIds ?? []));
       const votes = (data.votingComplete && data.votes)
-        ? { ...data.votes }
-        : prev.votes; // own vote (optimistic / vote-accepted) is preserved
-      return { ...prev, votes, votedUserIds, votingComplete: data.votingComplete, isVotingOpen: data.isVotingOpen };
-    }
+          ? { ...data.votes }
+          : prev.votes; // own vote (optimistic / vote-accepted) is preserved
+      return {
+         ...prev,
+        votes,
+        votedUserIds,
+        votingComplete: data.votingComplete,
+        isVotingOpen: data.isVotingOpen,
+        };
+      }
 
-    // Targeted server echo for the voter only (never broadcast). Confirms the
-    // validated card value so the voter's UI reflects the accepted vote.
+      // Targeted server echo for the voter only (never broadcast). Confirms the
+      // validated card value so the voter's UI reflects the accepted vote.
     case 'vote-accepted':
       return {
-        ...prev,
+         ...prev,
         votes: { ...prev.votes, [data.userId]: data.vote },
         votingComplete: data.votingComplete,
         isVotingOpen: data.isVotingOpen,
-      };
+        };
 
     case 'votes-reset':
-      return { ...prev, isVotingOpen: data.isVotingOpen, votingComplete: data.votingComplete, votes: { ...data.votes }, votedUserIds: [] };
+      return {
+         ...prev,
+        isVotingOpen: data.isVotingOpen,
+        votingComplete: data.votingComplete,
+        votes: { ...data.votes },
+        votedUserIds: [],
+        };
 
     case 'voting-started':
       return {
-        ...prev,
+         ...prev,
         isVotingOpen: data.isVotingOpen,
         votingComplete: data.votingComplete,
         votes: { ...data.votes },
         votedUserIds: [],
         round: data.round ?? prev.round,
         cardSet: data.cardSet ?? prev.cardSet,
-      };
+        };
 
     case 'round-stopped':
       return {
-        ...prev,
+         ...prev,
         isVotingOpen: data.isVotingOpen,
         votingComplete: data.votingComplete,
         votes: { ...data.votes },
-        votedUserIds: data.votes ? Object.keys(data.votes) : (prev.votedUserIds || []),
+        votedUserIds: data.votes ? Object.keys(data.votes) : (prev.votedUserIds ?? []),
         round: data.round ?? prev.round,
-      };
+        };
 
     case 'card-set-updated':
       return {
-        ...prev,
+         ...prev,
         cardSet: data.cardSet,
         isVotingOpen: data.isVotingOpen,
         votingComplete: data.votingComplete,
         votes: { ...data.votes },
         votedUserIds: [],
-      };
+        };
 
     case 'vote-out-started':
       return {
-        ...prev,
+         ...prev,
         activeVoteOut: {
           targetUserId: data.targetUserId,
           targetUserName: data.targetUserName,
@@ -84,21 +110,21 @@ const applyEvent = (prev, event, data) => {
           noVotes: data.noVotes,
           requiredYesVotes: data.requiredYesVotes,
           thresholdPercent: data.thresholdPercent,
-        },
-      };
+          },
+        };
 
     case 'vote-out-cast': {
       if (!prev.activeVoteOut) return prev;
       return {
-        ...prev,
+         ...prev,
         activeVoteOut: {
-          ...prev.activeVoteOut,
+           ...prev.activeVoteOut,
           yesVotes: data.yesVotes,
           noVotes: data.noVotes,
           requiredYesVotes: data.requiredYesVotes,
-        },
-      };
-    }
+          },
+        };
+      }
 
     case 'vote-out-ended':
       return { ...prev, activeVoteOut: null };
@@ -111,26 +137,32 @@ const applyEvent = (prev, event, data) => {
       return { ...prev, users: { ...prev.users, [data.userId]: data.user } };
 
     case 'user-countdown':
-      return { ...prev, users: { ...prev.users, [data.userId]: { ...data.user, countdownSeconds: data.remainingSeconds } } };
+      return {
+         ...prev,
+        users: {
+           ...prev.users,
+          [data.userId]: { ...data.user, countdownSeconds: data.remainingSeconds },
+         },
+        };
 
     case 'user-name-updated': {
       const users = { ...prev.users, [data.userId]: data.user };
       const next = { ...prev, users };
       if (data.isModeratorNameUpdate && data.moderatorName) next.moderator = data.moderatorName;
       return next;
-    }
+      }
 
     case 'moderator-changed': {
       const users = { ...prev.users };
       if (data.newModerator) users[data.newModeratorId] = data.newModerator;
       if (data.previousModerator) users[data.previousModeratorId] = data.previousModerator;
       return {
-        ...prev,
+         ...prev,
         users,
         moderatorId: data.newModeratorId,
         moderator: data.newModeratorName ?? prev.moderator,
-      };
-    }
+        };
+      }
 
     case 'participant-removed':
     case 'participant-auto-removed': {
@@ -138,13 +170,29 @@ const applyEvent = (prev, event, data) => {
       const votes = { ...prev.votes };
       delete users[data.userId];
       delete votes[data.userId];
-      const votedUserIds = (prev.votedUserIds || []).filter(id => id !== data.userId);
+      const votedUserIds = (prev.votedUserIds ?? []).filter(id => id !== data.userId);
       return { ...prev, users, votes, votedUserIds };
-    }
+      }
 
     default:
+       // Hook-owned events (session-joined, session-closed, session-cleanup,
+       // connection-conflict, you-were-removed, test-sound-trigger,
+       // leave-acknowledged) intentionally do not mutate local session state.
       return prev;
-  }
+    }
 };
 
-export { applyEvent };
+/**
+ * 3-arg façade preserving the historical call signature
+ * `applyEvent(prev, event, data)` used by the socket hook and the tests.
+ *
+ * `event` and `data` are bundled into the discriminated `EventInput` so the
+ * core reducer gets its per-event narrowing. The cast is a single, justified
+ * boundary (the values come straight from a call site that was checked against
+ * `EventPayload<E>`), not a value of unknown shape.
+ */
+export const applyEvent = <E extends EventName = EventName>(
+   prev: SessionState,
+   event: E,
+   data: EventPayload<E>,
+): SessionState => applyEventInput(prev, { event, data } as EventInput);
