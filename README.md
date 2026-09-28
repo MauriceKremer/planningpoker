@@ -37,7 +37,7 @@ A real-time Planning Poker application for Agile teams to estimate tasks collabo
 **Backend:**
 - Node.js & Express
 - Socket.IO
-- UUID v4 for user IDs; 8-character alphanumeric session codes (crypto.randomBytes)
+- UUID v4 for user IDs; 8-character uppercase hexadecimal session codes (crypto.randomBytes)
 - In-memory session store (process-local Map)
 
 **Infrastructure:**

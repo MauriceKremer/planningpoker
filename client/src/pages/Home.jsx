@@ -41,7 +41,6 @@ const Home = () => {
           joinedAt: moderatorUser.joinedAt
         });
         
-        // Also save to sessionStorage as backup
         
         // Navigate with clean URL (no user parameters)
         navigate(`/session/${response.sessionId}`);

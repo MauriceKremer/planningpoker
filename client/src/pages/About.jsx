@@ -241,7 +241,7 @@ const About = () => {
               
               <h4 className="text-lg font-medium mt-4 mb-2">Session Data (Temporary)</h4>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li><strong>Session IDs:</strong> Randomly generated 8-character alphanumeric codes</li>
+                <li><strong>Session IDs:</strong> Randomly generated 8-character uppercase hexadecimal codes (A–F, 0–9)</li>
                 <li><strong>User Information:</strong> Display names you choose when joining a session (not linked to any personal identity)</li>
                 <li><strong>Voting Data:</strong> Story point estimates you submit during sessions</li>
                 <li><strong>Activity Timestamps:</strong> Last seen times for session management and cleanup</li>
@@ -358,7 +358,7 @@ const About = () => {
                 <li>Request size limits (10KB maximum)</li>
                 <li>Session ID validation (8-character uppercase alphanumeric format)</li>
                 <li>User ID validation (UUID format)</li>
-                <li>Helmet security headers with a strict Content-Security-Policy for production</li>
+                <li>Helmet security headers with a strict Content-Security-Policy (applied in all environments; HSTS is enforced in production)</li>
                 <li>Trust proxy configuration for SSL termination</li>
                 <li>Protection against cross-session contamination</li>
                 <li>Access logs stored without IP addresses (privacy-safe log format)</li>

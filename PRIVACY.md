@@ -99,7 +99,7 @@ This Planning Poker application is designed with privacy as a core principle. Th
 - Request size limits (10KB maximum)
 - Session ID validation (8-character uppercase alphanumeric format)
 - User ID validation (UUID format)
-- Helmet security headers for production
+- Helmet security headers with a strict Content-Security-Policy (applied in all environments; HSTS is enforced in production)
 - Trust proxy configuration for SSL termination
 - Protection against cross-session contamination
 - Access logs stored without IP addresses (privacy-safe log format)
