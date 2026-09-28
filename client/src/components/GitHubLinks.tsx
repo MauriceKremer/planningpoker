@@ -1,9 +1,14 @@
+import type { ReactNode } from 'react';
 
 const REPO_URL = 'https://github.com/MauriceKremer/planningpoker';
 
 // GitHub Octicons (MIT licensed), inlined so the app keeps its
 // no-third-party-requests promise — no icon fonts or external images.
-const GitHubIcon = ({ label, href, children }) => (
+const GitHubIcon = ({ label, href, children }: {
+  label: string;
+  href: string;
+  children: ReactNode;
+}) => (
   <a
     href={href}
     target="_blank"

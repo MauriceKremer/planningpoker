@@ -1,7 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { clearAllSessionData } from '../utils/sessionStorage';
 
-const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }) => {
+interface SessionClosedProps {
+  sessionTitle: string;
+  moderatorName: string | null;
+  userLeft?: boolean;
+}
+
+const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }: SessionClosedProps) => {
   const navigate = useNavigate();
 
   const handleReturnHome = () => {
@@ -21,13 +27,13 @@ const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }) => {
               {userLeft ? 'You Left the Session' : 'Thanks for Participating!'}
             </h1>
             <p className="text-sm text-mocha-500">
-              {userLeft 
+              {userLeft
                 ? `You have left the planning poker session "${sessionTitle}".`
                 : `The planning poker session "${sessionTitle}" has been closed by the moderator.`
               }
             </p>
           </div>
-          
+
           <div className="mb-5 panel-honey">
             <p className="text-xs text-honey-800">
               <span className="font-semibold">Session:</span> {sessionTitle}<br />
@@ -43,8 +49,8 @@ const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }) => {
             <div className="p-3.5">
               <div className="max-h-0 group-hover:max-h-32 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out overflow-hidden">
                 <p className="text-xs text-mocha-600 mb-2.5">
-                  I'm a developer who loves creating simple, helpful tools to solve everyday problems. 
-                  I build apps for myself first and since I don't like paying for stuff or being tracked, 
+                  I'm a developer who loves creating simple, helpful tools to solve everyday problems.
+                  I build apps for myself first and since I don't like paying for stuff or being tracked,
                   mine are free and privacy-focused. Glad to have you here!
                 </p>
               </div>
@@ -59,14 +65,14 @@ const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }) => {
               </a>
             </div>
           </div>
-          
+
           <button
             onClick={handleReturnHome}
             className="btn btn-primary w-full py-2.5 px-5 text-sm"
           >
             Start or Join New Session
           </button>
-          
+
           <p className="mt-3 text-xs text-mocha-400">
             You can now create a new session or join an existing one.
           </p>

@@ -1,12 +1,19 @@
 import { useState } from 'react';
 import { joinSession } from '../utils/api';
+import type { SessionUser } from '../protocol/session';
 
-const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }) => {
+interface UsernamePromptProps {
+  sessionId: string;
+  onJoinSuccess: (user: SessionUser) => void;
+  sessionTitle?: string;
+}
+
+const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }: UsernamePromptProps) => {
   const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleJoinSession = async (e) => {
+  const handleJoinSession = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -20,11 +27,17 @@ const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }) => {
       console.error('Failed to join session:', error);
 
       // Match on the HTTP status (the stable contract), with the parsed
-      // body available on error.data.
-      if (error.status === 409) {
-        setError('This username is already taken. Please choose a different name.');
-      } else if (error.status === 404) {
-        setError('Session not found. Please check the session ID.');
+      // body available on error.data. `api.request` rejects with a
+      // `RequestError` carrying `status`/`data`.
+      if (error instanceof Error && 'status' in error) {
+        const httpError = error as unknown as { status: number };
+        if (httpError.status === 409) {
+          setError('This username is already taken. Please choose a different name.');
+        } else if (httpError.status === 404) {
+          setError('Session not found. Please check the session ID.');
+        } else {
+          setError('Failed to join session. Please try again.');
+        }
       } else {
         setError('Failed to join session. Please try again.');
       }
@@ -42,13 +55,13 @@ const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }) => {
       <p className="text-xs text-mocha-400 text-center mb-5">
         Session ID: {sessionId}
       </p>
-      
+
       {error && (
         <div className="mb-3.5 panel-clay text-clay-700">
           {error}
         </div>
       )}
-      
+
       <form onSubmit={handleJoinSession} className="space-y-3.5">
         <div>
           <label htmlFor="userName" className="block text-sm font-medium text-mocha-700 mb-1.5">

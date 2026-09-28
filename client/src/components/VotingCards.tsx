@@ -1,19 +1,29 @@
 import React from 'react';
+import type { SessionUser } from '../protocol/session';
 
-const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen, currentUser, onStopRound }) => {
+interface VotingCardsProps {
+  cardSet: string[];
+  onVote: (value: string) => void;
+  currentUserVote?: string | null;
+  isVotingOpen: boolean;
+  currentUser: SessionUser | null;
+  onStopRound?: () => void;
+}
+
+const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen, currentUser, onStopRound }: VotingCardsProps) => {
   // Special voting options
   const specialOptions = [
     { value: '☕', label: 'Break', description: 'Need a break' },
     { value: '❓', label: 'Question', description: 'Have questions' }
   ];
-  
+
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold text-mocha-800">
           {isVotingOpen ? 'Select Your Estimate' : 'Voting Closed'}
         </h3>
-        
+
         {currentUser?.isModerator && isVotingOpen && (
           <button
             onClick={onStopRound}
@@ -23,7 +33,7 @@ const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen
           </button>
         )}
       </div>
-      
+
       {currentUserVote && (
         <div className="mb-3 px-3 py-1.5 panel-sage text-sage-700 text-sm">
           <p>You voted: <span className="font-bold">{currentUserVote}</span></p>
@@ -45,8 +55,8 @@ const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen
                   aspect-square border-2 rounded-lg transition-all
                   flex items-center justify-center text-lg font-bold
                   disabled:opacity-50 disabled:cursor-not-allowed
-                  ${isSelected 
-                    ? 'bg-gradient-to-b from-ember-500 to-ember-600 border-ember-600 text-white shadow-button transform scale-105' 
+                  ${isSelected
+                    ? 'bg-gradient-to-b from-ember-500 to-ember-600 border-ember-600 text-white shadow-button transform scale-105'
                     : 'bg-cream-100/90 border-cream-400 text-mocha-700 hover:bg-ember-50 hover:border-ember-300 hover:text-ember-700'
                   }
                   ${!isVotingOpen && isSelected ? 'ring-2 ring-ember-300' : ''}
@@ -75,8 +85,8 @@ const VotingCards = React.memo(({ cardSet, onVote, currentUserVote, isVotingOpen
                   h-14 border-2 rounded-lg transition-all
                   flex flex-col items-center justify-center
                   disabled:opacity-50 disabled:cursor-not-allowed
-                  ${isSelected 
-                    ? 'bg-gradient-to-b from-caramel-400 to-caramel-600 border-caramel-600 text-white shadow-button transform scale-105' 
+                  ${isSelected
+                    ? 'bg-gradient-to-b from-caramel-400 to-caramel-600 border-caramel-600 text-white shadow-button transform scale-105'
                     : 'bg-caramel-50/80 border-caramel-200 text-caramel-800 hover:bg-caramel-100 hover:border-caramel-300'
                   }
                   ${!isVotingOpen && isSelected ? 'ring-2 ring-caramel-300' : ''}

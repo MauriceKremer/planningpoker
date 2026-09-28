@@ -1,56 +1,84 @@
 import React, { useState } from 'react';
+import type { User } from '../protocol/events';
+import type { SessionUser } from '../protocol/session';
 
-const UserList = React.memo(({ users, votes, votingComplete, votedUserIds, currentUser, onRemoveParticipant, isVotingOpen, onUpdateUserName, activeVoteOut, onStartVoteOut }) => {
-  const [editingUserId, setEditingUserId] = useState(null);
+type ActiveVoteOutState = import('../protocol/events').ActiveVoteOutState;
+
+interface UserListProps {
+  users: Record<string, User>;
+  votes: Record<string, string>;
+  votingComplete: boolean;
+  votedUserIds?: string[];
+  currentUser: SessionUser | null;
+  onRemoveParticipant?: (userId: string) => void;
+  isVotingOpen?: boolean;
+  onUpdateUserName?: (newName: string) => void;
+  activeVoteOut?: ActiveVoteOutState | null;
+  onStartVoteOut?: (userId: string) => void;
+}
+
+const UserList = React.memo(({
+  users,
+  votes,
+  votingComplete,
+  votedUserIds,
+  currentUser,
+  onRemoveParticipant,
+  isVotingOpen,
+  onUpdateUserName,
+  activeVoteOut,
+  onStartVoteOut,
+}: UserListProps) => {
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
-  
+
   // Sort users based on voting state
   const usersList = Object.values(users).sort((a, b) => {
     if (votingComplete && votes) {
       // When voting is complete, sort by vote value (highest to lowest)
       const voteA = votes[a.id];
       const voteB = votes[b.id];
-      
+
       // Handle users without votes
       if (!voteA && !voteB) return 0;
       if (!voteA) return 1;
       if (!voteB) return -1;
-      
+
       // Convert to numbers for comparison, handle special votes
       const numA = parseFloat(voteA);
       const numB = parseFloat(voteB);
-      
+
       if (!isNaN(numA) && !isNaN(numB)) {
         return numB - numA; // Highest first
       }
-      
+
       // If one is numeric and other isn't, numeric comes first
       if (!isNaN(numA) && isNaN(numB)) return -1;
       if (isNaN(numA) && !isNaN(numB)) return 1;
-      
+
       // Both non-numeric, sort alphabetically
       return voteA.toString().localeCompare(voteB.toString());
     } else {
       // Default sorting: moderator first, then by join time
       if (a.isModerator && !b.isModerator) return -1;
       if (!a.isModerator && b.isModerator) return 1;
-      return new Date(a.joinedAt) - new Date(b.joinedAt);
+      return new Date(a.joinedAt ?? 0).getTime() - new Date(b.joinedAt ?? 0).getTime();
     }
   });
 
-  const handleStartVoteOut = (userId) => {
+  const handleStartVoteOut = (userId: string) => {
     if (onStartVoteOut && !activeVoteOut) {
       onStartVoteOut(userId);
     }
   };
 
-  const handleRemoveUser = (userId) => {
+  const handleRemoveUser = (userId: string) => {
     if (onRemoveParticipant) {
       onRemoveParticipant(userId);
     }
   };
 
-  const handleNameClick = (user) => {
+  const handleNameClick = (user: User) => {
     // Only allow users to edit their own name
     if (currentUser?.id === user.id) {
       setEditingUserId(user.id);
@@ -73,7 +101,7 @@ const UserList = React.memo(({ users, votes, votingComplete, votedUserIds, curre
     setEditingName('');
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleNameSave();
     } else if (e.key === 'Escape') {
@@ -94,8 +122,8 @@ const UserList = React.memo(({ users, votes, votingComplete, votedUserIds, curre
         const vote = votingComplete ? votes[user.id] : null;
 
         return (
-          <div 
-            key={user.id} 
+          <div
+            key={user.id}
             data-testid={`user-${user.name}`}
             className={`flex items-center justify-between px-2 py-1.5 rounded-lg border transition-colors ${
               currentUser?.id === user.id
@@ -145,10 +173,10 @@ const UserList = React.memo(({ users, votes, votingComplete, votedUserIds, curre
                       </button>
                     </div>
                   ) : (
-                    <span 
+                    <span
                       className={`text-xs font-medium text-mocha-800 ${
-                        currentUser?.id === user.id 
-                          ? 'cursor-pointer hover:text-ember-700 hover:underline' 
+                        currentUser?.id === user.id
+                          ? 'cursor-pointer hover:text-ember-700 hover:underline'
                           : ''
                       }`}
                       onClick={() => handleNameClick(user)}
@@ -157,9 +185,9 @@ const UserList = React.memo(({ users, votes, votingComplete, votedUserIds, curre
                       {user.name}
                     </span>
                   )}
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${user.isOnline ? 'bg-sage-500' : 'bg-cream-400'}`} 
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${user.isOnline ? 'bg-sage-500' : 'bg-cream-400'}`}
                        title={user.isOnline ? 'Online' : 'Offline'} />
-                  {user.countdownSeconds > 0 && (
+                  {(user.countdownSeconds ?? 0) > 0 && (
                     <span className="badge badge-clay font-mono">
                       {user.countdownSeconds}s
                     </span>
@@ -168,7 +196,7 @@ const UserList = React.memo(({ users, votes, votingComplete, votedUserIds, curre
                 {user.isModerator && (
                   <span className="badge badge-honey ml-0.5">Moderator</span>
                 )}
-                {user.countdownSeconds > 0 && (
+                {(user.countdownSeconds ?? 0) > 0 && (
                   <div className="text-xs text-clay-600 mt-0.5">
                     Will be removed due to inactivity
                   </div>
@@ -190,7 +218,7 @@ const UserList = React.memo(({ users, votes, votingComplete, votedUserIds, curre
                   Waiting...
                 </span>
               ) : null}
-              
+
               <div className="flex items-center space-x-1">
                 {/* Vote-out button for participants */}
                 {currentUser?.id !== user.id && !activeVoteOut && onStartVoteOut && (

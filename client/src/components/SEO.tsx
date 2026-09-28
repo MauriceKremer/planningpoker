@@ -24,6 +24,14 @@ const removeStaticFallbacks = () => {
   document.head.querySelectorAll(PRERENDERED_SELECTOR).forEach((el) => el.remove());
 };
 
+interface SEOProps {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  url?: string;
+  noindex?: boolean;
+}
+
 /**
  * SEO component for managing page-specific meta tags
  * Uses react-helmet-async for dynamic meta tag updates.
@@ -34,10 +42,13 @@ const SEO = ({
   description = 'Free real-time Planning Poker for Agile teams. No signup, no ads, no tracking. Estimate with Fibonacci & T-shirt cards.',
   ogImage,
   url = 'https://planningpoker.bytecoder.nl/',
-  noindex = false
-}) => {
+  noindex = false,
+}: SEOProps) => {
   const { theme } = useActiveTheme();
-  const imageVersion = theme?.ogImageVersion || 'classic-2026';
+  // The theme object carries `ogImageVersion` from `theme/themes.json`; the
+  // loose `object` JSDoc type of `useActiveTheme` (untyped JS) needs this
+  // narrow cast for the field the component reads.
+  const imageVersion = (theme as { ogImageVersion?: string } | undefined)?.ogImageVersion || 'classic-2026';
   const socialImage = ogImage || `https://planningpoker.bytecoder.nl/images/og-image.jpg?v=${imageVersion}`;
 
   useEffect(() => {

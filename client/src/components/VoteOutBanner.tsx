@@ -1,5 +1,13 @@
+import type { ActiveVoteOutState } from '../protocol/events';
 
-const VoteOutBanner = ({ activeVoteOut, currentUserId, onVote, onCancel }) => {
+interface VoteOutBannerProps {
+  activeVoteOut: ActiveVoteOutState | null | undefined;
+  currentUserId?: string;
+  onVote: (vote: 'yes' | 'no') => void;
+  onCancel: () => void;
+}
+
+const VoteOutBanner = ({ activeVoteOut, currentUserId, onVote, onCancel }: VoteOutBannerProps) => {
   if (!activeVoteOut) return null;
 
   const {
@@ -13,10 +21,10 @@ const VoteOutBanner = ({ activeVoteOut, currentUserId, onVote, onCancel }) => {
   } = activeVoteOut;
 
   const isTarget = currentUserId === targetUserId;
-  const canVote = eligibleVoters.includes(currentUserId) && !isTarget;
+  const canVote = currentUserId != null && eligibleVoters.includes(currentUserId) && !isTarget;
   const isInitiator = currentUserId === activeVoteOut.initiatedByUserId;
 
-  const handleVote = (vote) => () => onVote(vote);
+  const handleVote = (vote: 'yes' | 'no') => () => onVote(vote);
 
   return (
     <div className="panel-clay" data-testid="vote-out-banner">

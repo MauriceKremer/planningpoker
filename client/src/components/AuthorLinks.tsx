@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 /**
  * Author identity links ("Built by Maurice Kremer").
  *
@@ -8,7 +10,7 @@
  * in sync when they change.
  *
  * Icons are inlined SVGs (LinkedIn glyph + GitHub mark), consistent with
- * GitHubLinks.jsx — the app makes no third-party requests.
+ * GitHubLinks.tsx — the app makes no third-party requests.
  */
 const AUTHOR = {
   name: 'Maurice Kremer',
@@ -16,7 +18,12 @@ const AUTHOR = {
   github: 'https://github.com/MauriceKremer',
 };
 
-const ProfileLink = ({ href, label, viewBox, children }) => (
+const ProfileLink = ({ href, label, viewBox, children }: {
+  href: string;
+  label: string;
+  viewBox: string;
+  children: ReactNode;
+}) => (
   <a
     href={href}
     target="_blank"
