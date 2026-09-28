@@ -23,25 +23,60 @@ export interface UseSessionSocketArgs {
   onCurrentUserUpdate: (update: Updater<SessionUser | null>) => void;
 }
 
+/**
+ * Socket lifecycle for the session page, in two cooperating effects:
+ *
+ * 1. CONNECTION effect — keyed on primitives (`sessionId`, `currentUser.id`).
+ *    Sets auth, emits `join-session` on every `connect` (socket.io re-fires
+ *    `connect` after every reconnect, so no separate `manager.on('reconnect')`
+ *    is needed), starts the heartbeat, and shows the closed-session UI when
+ *    the server rejects the join.
+ *
+ * 2. HANDLER effect — keyed on the socket instance only. Registers every
+ *    incoming-event handler exactly once per socket. All values that change
+ *    across renders (currentUser object, navigate, parent callbacks) are read
+ *    through refs, so the handler set is never torn down and re-attached by a
+ *    render — that tear-down/re-attach cycle was a source of dropped events
+ *    (handlers stripped while a delta was in flight) before M6.
+ *
+ * The split matters: the previous single effect included the `currentUser`
+ * OBJECT in its deps and stripped/re-registered all handlers on every identity
+ * change, while a `hasJoinedRef` guard then made some re-runs skip
+ * re-registration — leaving the page live but deaf.
+ */
 const useSessionSocket = ({
   sessionId,
   currentUser,
   onSessionUpdate,
   onCurrentUserUpdate,
 }: UseSessionSocketArgs) => {
-  const navigate = useNavigate();
   const socket = useSocket();
+  const navigate = useNavigate();
   const [isSocketReady, setIsSocketReady] = useState(false);
-  // Ref mirror so the join effect can read readiness without re-running when
-  // it flips (which used to tear down listeners and re-emit join-session).
+  // Ref mirror so the join fallback can read readiness without re-running.
   const isSocketReadyRef = useRef(false);
   const [sessionClosed, setSessionClosed] = useState(false);
   const [sessionClosedInfo, setSessionClosedInfo] = useState<
     SessionClosedInfo | null
   >(null);
   const [isFlashing, setIsFlashing] = useState(false);
-  const hasJoinedRef = useRef(false);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Latest-value refs: the handler effect reads these instead of closing over
+  // render-scoped values, keeping its registration stable.
+  const currentUserRef = useRef(currentUser);
+  const sessionIdRef = useRef(sessionId);
+  const navigateRef = useRef(navigate);
+  const onSessionUpdateRef = useRef(onSessionUpdate);
+  const onCurrentUserUpdateRef = useRef(onCurrentUserUpdate);
+
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+    sessionIdRef.current = sessionId;
+    navigateRef.current = navigate;
+    onSessionUpdateRef.current = onSessionUpdate;
+    onCurrentUserUpdateRef.current = onCurrentUserUpdate;
+  }, [currentUser, sessionId, navigate, onSessionUpdate, onCurrentUserUpdate]);
 
   // Notify participants that voting started (sound + flash)
   const notifyVotingStarted = useCallback(() => {
@@ -53,34 +88,37 @@ const useSessionSocket = ({
       audio.play().catch(() => { /* autoplay rejection is expected and harmless */ });
     } catch { /* audio unsupported — sound is optional */ }
   }, []);
+  const notifyVotingStartedRef = useRef(notifyVotingStarted);
 
   useEffect(() => {
-    if (!socket || !currentUser || !sessionId) return;
-    if (hasJoinedRef.current) return;
-    hasJoinedRef.current = true;
-    setIsSocketReady(false);
-    isSocketReadyRef.current = false;
+    notifyVotingStartedRef.current = notifyVotingStarted;
+  }, [notifyVotingStarted]);
 
-    // The session is gone server-side (closed, cleaned up, or a reconnected
-    // socket rejected at join). Render the closed-session UI instead of
-    // leaving a blank zombie page. Shared by the two paths that can learn
-    // this: `connect_error` and the plain `error` reply to `join-session`.
-    const showSessionClosed = (info: SessionClosedInfo) => {
-      setSessionClosedInfo(info);
-      try { removeUserSession(sessionId); } catch { /* nothing stored */ }
-      setSessionClosed(true);
-    };
+  // Shared state for the join fallback below: session-joined clears the timer
+  // via this ref so the two effects can cooperate without re-running.
+  const readyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    socket.auth = { sessionId, userId: currentUser.id };
+  // The session is gone server-side (closed, cleaned up, or a reconnected
+  // socket rejected at join). Render the closed-session UI instead of
+  // leaving a blank zombie page. Shared by the two paths that can learn
+  // this: `connect_error` and the plain `error` reply to `join-session`.
+  const showSessionClosed = useCallback((info: SessionClosedInfo) => {
+    setSessionClosedInfo(info);
+    const sid = sessionIdRef.current;
+    try { if (sid) removeUserSession(sid); } catch { /* nothing stored */ }
+    setSessionClosed(true);
+  }, []);
 
-    const readyTimeout = setTimeout(() => {
-      if (!isSocketReadyRef.current && socket.connected) {
-        socket.emit('join-session', { sessionId, userId: currentUser.id });
-      }
-    }, 5000);
+  // ── Effect 1: connection + join ────────────────────────────────────────────
+  const userId = currentUser?.id;
 
-    const handleConnect = () => {
-      socket.emit('join-session', { sessionId, userId: currentUser.id });
+  useEffect(() => {
+    if (!socket || !sessionId || !userId) return;
+
+    socket.auth = { sessionId, userId };
+
+    const join = () => {
+      socket.emit('join-session', { sessionId, userId });
     };
 
     const handleConnectError = (err: Error) => {
@@ -89,21 +127,44 @@ const useSessionSocket = ({
       }
     };
 
+    // Belt-and-braces: if a connect event was somehow missed, re-emit the join
+    // once after 5 s (idempotent — the server answers with session-joined).
+    if (readyTimeoutRef.current) clearTimeout(readyTimeoutRef.current);
+    readyTimeoutRef.current = setTimeout(() => {
+      if (!isSocketReadyRef.current && socket.connected) {
+        join();
+      }
+    }, 5000);
+
+    // `connect` fires again on every automatic reconnect, so this handler
+    // alone keeps the socket bound to the room across transport blips.
+    socket.on('connect', join);
     socket.on('connect_error', handleConnectError);
 
     if (socket.connected) {
-      handleConnect();
+      join();
     } else {
-      socket.on('connect', handleConnect);
       socket.connect();
     }
 
-    socket.io.on('reconnect', () => {
-      socket.emit('join-session', { sessionId, userId: currentUser.id });
-    });
-
-    const interval = startHeartbeat(socket, sessionId, currentUser.id);
+    const interval = startHeartbeat(socket, sessionId, userId);
     heartbeatRef.current = interval;
+
+    return () => {
+      if (readyTimeoutRef.current) {
+        clearTimeout(readyTimeoutRef.current);
+        readyTimeoutRef.current = null;
+      }
+      stopHeartbeat(heartbeatRef.current);
+      heartbeatRef.current = null;
+      socket.off('connect', join);
+      socket.off('connect_error', handleConnectError);
+    };
+  }, [socket, sessionId, userId, showSessionClosed]);
+
+  // ── Effect 2: incoming-event handlers (registered once per socket) ────────
+  useEffect(() => {
+    if (!socket) return;
 
     // M5.2: every incoming broadcast is validated at the boundary
     // (`validateEvent`) and merged by the typed reducer (`applyEvent`).
@@ -111,7 +172,7 @@ const useSessionSocket = ({
     const patch = <E extends EventName>(event: E, data: unknown) => {
       const payload = validateEvent(event, data);
       if (!payload) return;
-      onSessionUpdate((prev) =>
+      onSessionUpdateRef.current((prev) =>
         prev ? applyEvent(prev, event, payload) : prev,
       );
     };
@@ -123,12 +184,12 @@ const useSessionSocket = ({
 
     socket.on('votes-reset', (data) => patch('votes-reset', data));
     socket.on('voting-started', (data) => {
-      notifyVotingStarted();
+      notifyVotingStartedRef.current();
       patch('voting-started', data);
     });
     socket.on('round-stopped', (data) => patch('round-stopped', data));
     socket.on('test-sound-trigger', (data) => {
-      notifyVotingStarted();
+      notifyVotingStartedRef.current();
       patch('test-sound-trigger', data);
     });
     socket.on('card-set-updated', (data) => patch('card-set-updated', data));
@@ -136,11 +197,11 @@ const useSessionSocket = ({
     socket.on('user-name-updated', (data) => {
       const p = validateEvent('user-name-updated', data);
       if (!p) return;
-      onSessionUpdate((prev) =>
+      onSessionUpdateRef.current((prev) =>
         prev ? applyEvent(prev, 'user-name-updated', p) : prev,
       );
-      if (p.userId === currentUser?.id) {
-        onCurrentUserUpdate((user) => (user ? { ...user, name: p.newName } : user));
+      if (p.userId === currentUserRef.current?.id) {
+        onCurrentUserUpdateRef.current((user) => (user ? { ...user, name: p.newName } : user));
       }
     });
 
@@ -150,10 +211,13 @@ const useSessionSocket = ({
       // Initial full-state load — the only event that still ships the whole session.
       const p = validateEvent('session-joined', data);
       if (!p) return;
-      onSessionUpdate(p.session as SessionState | null);
+      onSessionUpdateRef.current(p.session as SessionState | null);
       setIsSocketReady(true);
       isSocketReadyRef.current = true;
-      clearTimeout(readyTimeout);
+      if (readyTimeoutRef.current) {
+        clearTimeout(readyTimeoutRef.current);
+        readyTimeoutRef.current = null;
+      }
     });
 
     socket.on('user-disconnected', (data) => patch('user-disconnected', data));
@@ -161,17 +225,18 @@ const useSessionSocket = ({
     socket.on('moderator-changed', (data) => {
       const p = validateEvent('moderator-changed', data);
       if (!p) return;
-      onSessionUpdate((prev) =>
+      onSessionUpdateRef.current((prev) =>
         prev ? applyEvent(prev, 'moderator-changed', p) : prev,
       );
-      if (currentUser) {
-        const updatedUser = currentUser.id === p.newModeratorId
+      const me = currentUserRef.current;
+      if (me) {
+        const updatedUser = me.id === p.newModeratorId
           ? p.newModerator
-          : (currentUser.id === p.previousModeratorId ? p.previousModerator : null);
-        if (updatedUser) onCurrentUserUpdate(updatedUser);
+          : (me.id === p.previousModeratorId ? p.previousModerator : null);
+        if (updatedUser) onCurrentUserUpdateRef.current(updatedUser);
       }
-      const isNewMod = currentUser && currentUser.id === p.newModeratorId;
-      const wasPrevMod = currentUser && currentUser.id === p.previousModeratorId;
+      const isNewMod = !!me && me.id === p.newModeratorId;
+      const wasPrevMod = !!me && me.id === p.previousModeratorId;
       if (p.wasManualTransfer) {
         if (isNewMod) alert(`You have been made the moderator by ${p.previousModeratorName}!`);
         else if (wasPrevMod) alert(`You have transferred moderator role to ${p.newModeratorName}`);
@@ -186,10 +251,9 @@ const useSessionSocket = ({
     socket.on('connection-conflict', (data) => {
       const p = validateEvent('connection-conflict', data);
       if (!p) return;
-      removeUserSession(sessionId);
-
+      try { removeUserSession(sessionIdRef.current); } catch { /* already gone */ }
       alert(p.message || 'Your session has been accessed from another location.');
-      navigate('/');
+      navigateRef.current('/');
     });
 
     socket.on('session-closed', (data) => {
@@ -202,15 +266,15 @@ const useSessionSocket = ({
       const p = validateEvent('you-were-removed', data);
       if (!p) return;
       alert(`${p.reason} by ${p.removedBy}`);
-      navigate('/');
+      navigateRef.current('/');
     });
 
     socket.on('session-cleanup', (data) => {
       const p = validateEvent('session-cleanup', data);
       if (!p) return;
-      try { removeUserSession(sessionId); } catch { /* already gone */ }
+      try { removeUserSession(sessionIdRef.current); } catch { /* already gone */ }
       alert(`Session closed: ${p.message}`);
-      navigate('/');
+      navigateRef.current('/');
     });
 
     socket.on('user-countdown', (data) => patch('user-countdown', data));
@@ -224,13 +288,13 @@ const useSessionSocket = ({
     socket.on('vote-out-ended', (data) => {
       const p = validateEvent('vote-out-ended', data);
       if (!p) return;
-      onSessionUpdate((prev) =>
+      onSessionUpdateRef.current((prev) =>
         prev ? applyEvent(prev, 'vote-out-ended', p) : prev,
       );
-      if (p.removed && currentUser?.id === p.targetUserId) {
+      if (p.removed && currentUserRef.current?.id === p.targetUserId) {
         alert('You have been removed from the session by participant vote.');
-        removeUserSession(sessionId);
-        navigate('/');
+        try { removeUserSession(sessionIdRef.current); } catch { /* already gone */ }
+        navigateRef.current('/');
       }
     });
 
@@ -246,54 +310,33 @@ const useSessionSocket = ({
       console.error('Socket error:', error);
     });
 
-    socket.io.on('reconnect', () => {
-      socket.emit('join-session', { sessionId, userId: currentUser.id });
-    });
-
-    // Clean up handlers when this effect re-runs.
-    const events = [
-      'error',
-      'vote-submitted',
-      'vote-accepted',
-      'votes-reset',
-      'voting-started',
-      'round-stopped',
-      'test-sound-trigger',
-      'card-set-updated',
-      'user-name-updated',
-      'user-joined',
-      'session-joined',
-      'user-disconnected',
-      'moderator-changed',
-      'participant-removed',
-      'session-closed',
-      'you-were-removed',
-      'session-cleanup',
-      'user-countdown',
-      'participant-auto-removed',
-      'connection-conflict',
-      'leave-acknowledged',
-      'vote-out-started',
-      'vote-out-cast',
-      'vote-out-ended',
-    ] as const;
-    events.forEach(e => socket.off(e));
-    socket.off('connect', handleConnect);
-    socket.off('connect_error', handleConnectError);
-    socket.io.off('reconnect');
-
     return () => {
-      clearTimeout(readyTimeout);
-      hasJoinedRef.current = false;
-      setIsSocketReady(false);
-      stopHeartbeat(heartbeatRef.current);
-      heartbeatRef.current = null;
-      events.forEach(e => socket.off(e));
-      socket.off('connect', handleConnect);
-      socket.off('connect_error', handleConnectError);
-      socket.io.off('reconnect');
+      socket.off('vote-submitted');
+      socket.off('vote-accepted');
+      socket.off('votes-reset');
+      socket.off('voting-started');
+      socket.off('round-stopped');
+      socket.off('test-sound-trigger');
+      socket.off('card-set-updated');
+      socket.off('user-name-updated');
+      socket.off('user-joined');
+      socket.off('session-joined');
+      socket.off('user-disconnected');
+      socket.off('moderator-changed');
+      socket.off('participant-removed');
+      socket.off('connection-conflict');
+      socket.off('session-closed');
+      socket.off('you-were-removed');
+      socket.off('session-cleanup');
+      socket.off('user-countdown');
+      socket.off('participant-auto-removed');
+      socket.off('leave-acknowledged');
+      socket.off('vote-out-started');
+      socket.off('vote-out-cast');
+      socket.off('vote-out-ended');
+      socket.off('error');
     };
-  }, [socket, currentUser, sessionId, navigate, notifyVotingStarted, onSessionUpdate, onCurrentUserUpdate]);
+  }, [socket, showSessionClosed]);
 
   return { isSocketReady, sessionClosed, sessionClosedInfo, isFlashing, socket, heartbeatRef };
 };

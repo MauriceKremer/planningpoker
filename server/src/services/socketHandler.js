@@ -119,8 +119,16 @@ const setupSocketEvents = (io, options = {}) => {
         if (existingSocketId && existingSocketId !== socket.id) {
           const existingSocket = io.sockets.sockets.get(existingSocketId);
           if (existingSocket) {
-            existingSocket.emit('connection-conflict', assertOutgoing('connection-conflict', { message: 'Your session has been accessed from another location. You have been disconnected.' }));
-            existingSocket.disconnect(true);
+            // Only treat it as a takeover when the old socket is STILL alive
+            // server-side. After an abrupt transport blip the client's
+            // reconnect can beat the disconnect handler here: the tracked
+            // socket is already dead, and killing it (with its
+            // connection-conflict emit) would eject the user from their own
+            // page just for reconnecting.
+            if (existingSocket.connected) {
+              existingSocket.emit('connection-conflict', assertOutgoing('connection-conflict', { message: 'Your session has been accessed from another location. You have been disconnected.' }));
+              existingSocket.disconnect(true);
+            }
           }
           untrackConnection(existingSocketId);
         }

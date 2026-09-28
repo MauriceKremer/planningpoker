@@ -20,7 +20,10 @@ export const useSocket = (): Socket | null => {
        // polling-first + upgrade is robust and is what socket.io does by default.
       transports: ['polling', 'websocket'],
       upgrade: true,
-      rememberUpgrade: true,
+      // rememberUpgrade deliberately OFF: with it on, every reconnect skipped
+      // polling and went websocket-first — the exact race described above — and
+      // server→client deltas were lost, leaving the page live but deaf.
+      rememberUpgrade: false,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 30000,
