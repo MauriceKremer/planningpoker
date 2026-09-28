@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import type { User } from '../protocol/events';
+import { memo, useState, type KeyboardEvent } from 'react';
+import type { User, ActiveVoteOutState } from '../protocol/events';
 import type { SessionUser } from '../protocol/session';
-
-type ActiveVoteOutState = import('../protocol/events').ActiveVoteOutState;
 
 interface UserListProps {
   users: Record<string, User>;
@@ -17,7 +15,7 @@ interface UserListProps {
   onStartVoteOut?: (userId: string) => void;
 }
 
-const UserList = React.memo(({
+const UserList = memo(({
   users,
   votes,
   votingComplete,
@@ -32,81 +30,42 @@ const UserList = React.memo(({
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
-  // Sort users based on voting state
   const usersList = Object.values(users).sort((a, b) => {
     if (votingComplete && votes) {
-      // When voting is complete, sort by vote value (highest to lowest)
-      const voteA = votes[a.id];
-      const voteB = votes[b.id];
-
-      // Handle users without votes
-      if (!voteA && !voteB) return 0;
-      if (!voteA) return 1;
-      if (!voteB) return -1;
-
-      // Convert to numbers for comparison, handle special votes
-      const numA = parseFloat(voteA);
-      const numB = parseFloat(voteB);
-
-      if (!isNaN(numA) && !isNaN(numB)) {
-        return numB - numA; // Highest first
-      }
-
-      // If one is numeric and other isn't, numeric comes first
-      if (!isNaN(numA) && isNaN(numB)) return -1;
-      if (isNaN(numA) && !isNaN(numB)) return 1;
-
-      // Both non-numeric, sort alphabetically
-      return voteA.toString().localeCompare(voteB.toString());
-    } else {
-      // Default sorting: moderator first, then by join time
-      if (a.isModerator && !b.isModerator) return -1;
-      if (!a.isModerator && b.isModerator) return 1;
-      return new Date(a.joinedAt ?? 0).getTime() - new Date(b.joinedAt ?? 0).getTime();
+      // Highest vote first; numeric values outrank special cards (☕ ❓),
+      // which sort alphabetically. Unvoted participants sink to the bottom.
+      const numA = parseFloat(votes[a.id] ?? '');
+      const numB = parseFloat(votes[b.id] ?? '');
+      const numeric = (n: number) => !Number.isNaN(n);
+      if (numeric(numA) !== numeric(numB)) return numeric(numA) ? -1 : 1;
+      if (numeric(numA) && numeric(numB)) return numB - numA;
+      return (votes[a.id] ?? '').localeCompare(votes[b.id] ?? '');
     }
+    if (a.isModerator !== b.isModerator) return a.isModerator ? -1 : 1;
+    return new Date(a.joinedAt ?? 0).getTime() - new Date(b.joinedAt ?? 0).getTime();
   });
 
-  const handleStartVoteOut = (userId: string) => {
-    if (onStartVoteOut && !activeVoteOut) {
-      onStartVoteOut(userId);
-    }
-  };
-
-  const handleRemoveUser = (userId: string) => {
-    if (onRemoveParticipant) {
-      onRemoveParticipant(userId);
-    }
-  };
-
-  const handleNameClick = (user: User) => {
-    // Only allow users to edit their own name
+  const startEditingName = (user: User) => {
     if (currentUser?.id === user.id) {
       setEditingUserId(user.id);
       setEditingName(user.name);
     }
   };
 
+  const stopEditingName = () => {
+    setEditingUserId(null);
+    setEditingName('');
+  };
+
   const handleNameSave = () => {
-    if (editingName.trim() && editingName.trim() !== currentUser?.name) {
-      if (onUpdateUserName) {
-        onUpdateUserName(editingName.trim());
-      }
-    }
-    setEditingUserId(null);
-    setEditingName('');
+    const name = editingName.trim();
+    if (name && name !== currentUser?.name) onUpdateUserName?.(name);
+    stopEditingName();
   };
 
-  const handleNameCancel = () => {
-    setEditingUserId(null);
-    setEditingName('');
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleNameSave();
-    } else if (e.key === 'Escape') {
-      handleNameCancel();
-    }
+  const handleNameKey = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') handleNameSave();
+    if (e.key === 'Escape') stopEditingName();
   };
 
   return (
@@ -114,12 +73,11 @@ const UserList = React.memo(({
       {usersList.map((user) => {
         // While the round is open the client only knows WHO has voted
         // (`votedUserIds`, ids from the server) — card values are hidden.
-        const hasVoted = votingComplete
-          ? votes[user.id] !== undefined
-          : isVotingOpen
-            ? (votedUserIds || []).includes(user.id)
-            : false;
-        const vote = votingComplete ? votes[user.id] : null;
+        const countdown = user.countdownSeconds ?? 0;
+        const hasVoted = isVotingOpen && !votingComplete
+          ? (votedUserIds ?? []).includes(user.id)
+          : false;
+        const vote = votingComplete ? votes[user.id] : undefined;
 
         return (
           <div
@@ -149,7 +107,7 @@ const UserList = React.memo(({
                         type="text"
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
-                        onKeyDown={handleKeyPress}
+                        onKeyDown={handleNameKey}
                         onBlur={handleNameSave}
                         className="text-xs font-medium px-1.5 py-0.5 bg-white/80 border border-ember-300 rounded focus:outline-none focus:ring-1 focus:ring-ember-400"
                         placeholder="Enter your name"
@@ -166,7 +124,7 @@ const UserList = React.memo(({
                         ✓
                       </button>
                       <button
-                        onClick={handleNameCancel}
+                        onClick={stopEditingName}
                         className="text-clay-600 hover:text-clay-700 text-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
                         title="Cancel"
                         aria-label="Cancel editing"
@@ -182,7 +140,7 @@ const UserList = React.memo(({
                           ? 'cursor-pointer hover:text-ember-700 hover:underline'
                           : 'cursor-default'
                       }`}
-                      onClick={() => currentUser?.id === user.id && handleNameClick(user)}
+                      onClick={() => startEditingName(user)}
                       disabled={currentUser?.id !== user.id}
                       title={currentUser?.id === user.id ? 'Click to edit your name' : undefined}
                     >
@@ -191,16 +149,16 @@ const UserList = React.memo(({
                   )}
                   <div className={`w-2 h-2 rounded-full shrink-0 ${user.isOnline ? 'bg-sage-500' : 'bg-cream-400'}`}
                        title={user.isOnline ? 'Online' : 'Offline'} />
-                  {(user.countdownSeconds ?? 0) > 0 && (
+                  {countdown > 0 && (
                     <span className="badge badge-clay font-mono">
-                      {user.countdownSeconds}s
+                      {countdown}s
                     </span>
                   )}
                 </div>
                 {user.isModerator && (
                   <span className="badge badge-honey ml-0.5">Moderator</span>
                 )}
-                {(user.countdownSeconds ?? 0) > 0 && (
+                {countdown > 0 && (
                   <div className="text-xs text-clay-600 mt-0.5">
                     Will be removed due to inactivity
                   </div>
@@ -213,7 +171,7 @@ const UserList = React.memo(({
                 <span className="badge badge-ember font-semibold">
                   {vote}
                 </span>
-              ) : hasVoted && isVotingOpen ? (
+              ) : hasVoted ? (
                 <span className="badge badge-sage">
                   ✓ Voted
                 </span>
@@ -224,10 +182,9 @@ const UserList = React.memo(({
               ) : null}
 
               <div className="flex items-center space-x-1">
-                {/* Vote-out button for participants */}
                 {currentUser?.id !== user.id && !activeVoteOut && onStartVoteOut && (
                   <button
-                    onClick={() => handleStartVoteOut(user.id)}
+                    onClick={() => onStartVoteOut?.(user.id)}
                     className="text-ember-600 hover:text-ember-700 text-sm px-1.5 py-0.5 hover:bg-ember-50 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="Start vote to remove participant"
                     aria-label={`Start vote to remove ${user.name}`}
@@ -235,10 +192,9 @@ const UserList = React.memo(({
                     🗳️
                   </button>
                 )}
-                {/* Remove button for moderator */}
                 {currentUser?.isModerator && !user.isModerator && onRemoveParticipant && (
                   <button
-                    onClick={() => handleRemoveUser(user.id)}
+                    onClick={() => onRemoveParticipant?.(user.id)}
                     className="text-clay-600 hover:text-clay-700 text-sm px-1.5 py-0.5 hover:bg-clay-50 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="Remove participant"
                     aria-label={`Remove ${user.name}`}

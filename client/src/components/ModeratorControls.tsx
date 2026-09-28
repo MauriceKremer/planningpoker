@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { saveCardSetPreference } from '../utils/cardSetStorage';
 import type { SessionState } from '../protocol/session';
 
@@ -19,6 +19,21 @@ interface ModeratorControlsProps {
   onCloseSession?: () => void;
 }
 
+const Modal = ({ titleId, title, onClose, children }: { titleId: string; title: string; onClose: () => void; children: ReactNode }) => (
+  <div
+    className="fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby={titleId}
+    onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }}
+  >
+    <div className="card-lg p-5 max-w-md w-full mx-4" tabIndex={-1} autoFocus>
+      <h3 id={titleId} className="text-base font-semibold text-mocha-800 mb-4">{title}</h3>
+      {children}
+    </div>
+  </div>
+);
+
 const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferModerator, onCloseSession }: ModeratorControlsProps) => {
   const [showCardSetModal, setShowCardSetModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -30,74 +45,48 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
   if (!session) return null;
 
   const currentCardSet = session.cardSet || [...PREDEFINED_CARD_SETS.fibonacci.values];
+  const availableParticipants = Object.values(session.users || {})
+    .filter(user => !user.isModerator && user.isOnline);
 
   const handleCardSetUpdate = () => {
-    let newCardSet: string[];
-    let cardSetType: string;
-
-    if (isCustom) {
-      // Parse custom card set
-      const customValues = customCardSet
-        .split(',')
-        .map(val => val.trim())
-        .filter(val => val.length > 0);
-
-      if (customValues.length === 0) {
-        alert('Please enter at least one card value');
-        return;
+    const resolveCardSet = (): { values: string[]; type: string } | null => {
+      if (isCustom) {
+        const values = customCardSet.split(',').map(v => v.trim()).filter(Boolean);
+        if (values.length === 0) {
+          alert('Please enter at least one card value');
+          return null;
+        }
+        return { values, type: 'custom' };
       }
+      return { values: [...PREDEFINED_CARD_SETS[selectedCardSet].values], type: selectedCardSet };
+    };
 
-      newCardSet = customValues;
-      cardSetType = 'custom';
-    } else {
-      newCardSet = [...PREDEFINED_CARD_SETS[selectedCardSet].values];
-      cardSetType = selectedCardSet;
-    }
+    const cardSet = resolveCardSet();
+    if (!cardSet) return;
 
-    // Save to localStorage for future sessions
-    saveCardSetPreference(newCardSet, cardSetType);
-
-    if (onUpdateCardSet) {
-      onUpdateCardSet(newCardSet);
-    }
-
+    saveCardSetPreference(cardSet.values, cardSet.type);
+    onUpdateCardSet?.(cardSet.values);
     setShowCardSetModal(false);
   };
 
   const handleTransferModerator = () => {
-    if (!selectedParticipant) {
+    const target = session.users[selectedParticipant];
+    if (!target) {
       alert('Please select a participant to transfer moderator role to');
       return;
     }
-
-    const targetUser = session.users[selectedParticipant];
-    const confirmMessage = `Are you sure you want to transfer moderator role to ${targetUser?.name}? This action cannot be undone.`;
-
-    if (window.confirm(confirmMessage)) {
-      if (onTransferModerator) {
-        onTransferModerator(selectedParticipant);
-      }
+    if (window.confirm(`Are you sure you want to transfer moderator role to ${target.name}? This action cannot be undone.`)) {
+      onTransferModerator?.(selectedParticipant);
       setShowTransferModal(false);
       setSelectedParticipant('');
     }
   };
 
   const handleCloseSession = () => {
-    const confirmMessage = 'Are you sure you want to close this session? This will end the session for all participants and cannot be undone.';
-
-    if (window.confirm(confirmMessage)) {
-      if (onCloseSession) {
-        // Call the close handler - this will emit the socket event
-        // The server will broadcast session-closed event back to all clients
-        // including the moderator, which will show the SessionClosed component
-        onCloseSession();
-      }
+    if (window.confirm('Are you sure you want to close this session? This will end the session for all participants and cannot be undone.')) {
+      onCloseSession?.();
     }
   };
-
-  // Get non-moderator participants for transfer selection
-  const availableParticipants = Object.values(session.users || {})
-    .filter(user => !user.isModerator && user.isOnline);
 
   return (
     <>
@@ -154,168 +143,135 @@ const ModeratorControls = ({ session, onTestSound, onUpdateCardSet, onTransferMo
         </div>
       </div>
 
-      {/* Card Set Configuration Modal */}
       {showCardSetModal && (
-        <div
-          className="fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="card-set-modal-title"
-          onKeyDown={(e) => { if (e.key === 'Escape') setShowCardSetModal(false); }}
-        >
-          <div className="card-lg p-5 max-w-md w-full mx-4" tabIndex={-1} autoFocus>
-            <h3 id="card-set-modal-title" className="text-base font-semibold text-mocha-800 mb-4">Configure Card Set</h3>
+        <Modal titleId="card-set-modal-title" title="Configure Card Set" onClose={() => setShowCardSetModal(false)}>
+          <div className="space-y-3">
+            <div>
+              <label className="flex items-center space-x-2 text-sm text-mocha-700">
+                <input
+                  type="radio"
+                  className="accent-ember-600"
+                  checked={!isCustom}
+                  onChange={() => setIsCustom(false)}
+                />
+                <span className="font-medium">Predefined Sets</span>
+              </label>
 
-            <div className="space-y-3">
-              {/* Predefined Sets */}
-              <div>
-                <label className="flex items-center space-x-2 text-sm text-mocha-700">
-                  <input
-                    type="radio"
-                    className="accent-ember-600"
-                    checked={!isCustom}
-                    onChange={() => setIsCustom(false)}
-                  />
-                  <span className="font-medium">Predefined Sets</span>
-                </label>
-
-                {!isCustom && (
-                  <div className="ml-6 mt-2 space-y-1.5">
-                    {Object.entries(PREDEFINED_CARD_SETS).map(([key, set]) => (
-                      <label key={key} className="flex items-center space-x-2 text-sm text-mocha-700">
-                        <input
-                          type="radio"
-                          name="cardSet"
-                          value={key}
-                          className="accent-ember-600"
-                          checked={selectedCardSet === key}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // Sound cast: a radio value outside the registry
-                            // can only exist if PREDEFINED_CARD_SETS is edited
-                            // without this guard being updated.
-                            if (value in PREDEFINED_CARD_SETS) {
-                              setSelectedCardSet(value as CardSetKey);
-                            }
-                          }}
-                        />
-                        <span className="font-medium">{set.name}</span>
-                        <span className="text-xs text-mocha-400">({set.values.join(', ')})</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Custom Set */}
-              <div>
-                <label className="flex items-center space-x-2 text-sm text-mocha-700">
-                  <input
-                    type="radio"
-                    className="accent-ember-600"
-                    checked={isCustom}
-                    onChange={() => setIsCustom(true)}
-                  />
-                  <span className="font-medium">Custom Set</span>
-                </label>
-
-                {isCustom && (
-                  <div className="ml-6 mt-2">
-                    <input
-                      type="text"
-                      placeholder="Enter values separated by commas (e.g., 1, 2, 4, 8)"
-                      value={customCardSet}
-                      onChange={(e) => setCustomCardSet(e.target.value)}
-                      className="input-field text-sm"
-                    />
-                    <p className="text-xs text-mocha-400 mt-1">
-                      Separate values with commas. Examples: 1, 2, 3, 5, 8 or Small, Medium, Large
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex space-x-2.5 mt-5">
-              <button
-                onClick={handleCardSetUpdate}
-                className="btn btn-primary flex-1 py-2 px-4 min-h-[44px]"
-              >
-                Update Card Set
-              </button>
-              <button
-                onClick={() => setShowCardSetModal(false)}
-                className="btn btn-quiet flex-1 py-2 px-4 min-h-[44px]"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Moderator Transfer Modal */}
-      {showTransferModal && (
-        <div
-          className="fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="transfer-modal-title"
-          onKeyDown={(e) => { if (e.key === 'Escape') setShowTransferModal(false); }}
-        >
-          <div className="card-lg p-5 max-w-md w-full mx-4" tabIndex={-1} autoFocus>
-            <h3 id="transfer-modal-title" className="text-base font-semibold text-mocha-800 mb-4">Transfer Moderator Role</h3>
-
-            <div className="space-y-3">
-              <p className="text-sm text-mocha-500">
-                Select a participant to transfer your moderator role to. This action cannot be undone.
-              </p>
-
-              {availableParticipants.length === 0 ? (
-                <p className="text-sm text-clay-600">
-                  No other participants available to transfer moderator role to.
-                </p>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-mocha-700 mb-1.5">
-                    Select participant:
-                  </label>
-                  <select
-                    value={selectedParticipant}
-                    onChange={(e) => setSelectedParticipant(e.target.value)}
-                    className="input-field"
-                  >
-                    <option value="">Choose a participant...</option>
-                    {availableParticipants.map(user => (
-                      <option key={user.id} value={user.id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
+              {!isCustom && (
+                <div className="ml-6 mt-2 space-y-1.5">
+                  {Object.entries(PREDEFINED_CARD_SETS).map(([key, set]) => (
+                    <label key={key} className="flex items-center space-x-2 text-sm text-mocha-700">
+                      <input
+                        type="radio"
+                        name="cardSet"
+                        value={key}
+                        className="accent-ember-600"
+                        checked={selectedCardSet === key}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Sound cast: a radio value outside the registry
+                          // can only exist if PREDEFINED_CARD_SETS is edited
+                          // without this guard being updated.
+                          if (value in PREDEFINED_CARD_SETS) {
+                            setSelectedCardSet(value as CardSetKey);
+                          }
+                        }}
+                      />
+                      <span className="font-medium">{set.name}</span>
+                      <span className="text-xs text-mocha-400">({set.values.join(', ')})</span>
+                    </label>
+                  ))}
                 </div>
               )}
             </div>
 
-            <div className="flex space-x-2.5 mt-5">
-              <button
-                onClick={() => {
-                  setShowTransferModal(false);
-                  setSelectedParticipant('');
-                }}
-                className="btn btn-quiet flex-1 px-4 py-2 min-h-[44px]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleTransferModerator}
-                disabled={!selectedParticipant}
-                className="btn btn-secondary flex-1 px-4 py-2 min-h-[44px]"
-              >
-                Transfer
-              </button>
+            <div>
+              <label className="flex items-center space-x-2 text-sm text-mocha-700">
+                <input
+                  type="radio"
+                  className="accent-ember-600"
+                  checked={isCustom}
+                  onChange={() => setIsCustom(true)}
+                />
+                <span className="font-medium">Custom Set</span>
+              </label>
+
+              {isCustom && (
+                <div className="ml-6 mt-2">
+                  <input
+                    type="text"
+                    placeholder="Enter values separated by commas (e.g., 1, 2, 4, 8)"
+                    value={customCardSet}
+                    onChange={(e) => setCustomCardSet(e.target.value)}
+                    className="input-field text-sm"
+                  />
+                  <p className="text-xs text-mocha-400 mt-1">
+                    Separate values with commas. Examples: 1, 2, 3, 5, 8 or Small, Medium, Large
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+
+          <div className="flex space-x-2.5 mt-5">
+            <button onClick={handleCardSetUpdate} className="btn btn-primary flex-1 py-2 px-4 min-h-[44px]">
+              Update Card Set
+            </button>
+            <button onClick={() => setShowCardSetModal(false)} className="btn btn-quiet flex-1 py-2 px-4 min-h-[44px]">
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {showTransferModal && (
+        <Modal titleId="transfer-modal-title" title="Transfer Moderator Role" onClose={() => { setShowTransferModal(false); setSelectedParticipant(''); }}>
+          <div className="space-y-3">
+            <p className="text-sm text-mocha-500">
+              Select a participant to transfer your moderator role to. This action cannot be undone.
+            </p>
+
+            {availableParticipants.length === 0 ? (
+              <p className="text-sm text-clay-600">
+                No other participants available to transfer moderator role to.
+              </p>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-mocha-700 mb-1.5">
+                  Select participant:
+                </label>
+                <select
+                  value={selectedParticipant}
+                  onChange={(e) => setSelectedParticipant(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="">Choose a participant...</option>
+                  {availableParticipants.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex space-x-2.5 mt-5">
+            <button
+              onClick={() => { setShowTransferModal(false); setSelectedParticipant(''); }}
+              className="btn btn-quiet flex-1 px-4 py-2 min-h-[44px]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleTransferModerator}
+              disabled={!selectedParticipant}
+              className="btn btn-secondary flex-1 px-4 py-2 min-h-[44px]"
+            >
+              Transfer
+            </button>
+          </div>
+        </Modal>
       )}
     </>
   );

@@ -19,6 +19,26 @@ import SessionClosed from '../components/SessionClosed';
 import SEO from '../components/SEO';
 import VoteOutBanner from '../components/VoteOutBanner';
 
+/**
+ * Clipboard write with a textarea fallback for non-secure contexts, where
+ * `navigator.clipboard` is unavailable (execCommand is deprecated but is the
+ * only option there).
+ */
+const copyText = async (text: string) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.position = 'fixed';
+  textArea.style.opacity = '0';
+  document.body.appendChild(textArea);
+  textArea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textArea);
+};
+
 const Session = () => {
   // The route is `/session/:sessionId`, so the param is always present on
   // anything this page renders; the `?? ''` fallback only routes the
@@ -34,7 +54,7 @@ const Session = () => {
   const [showUsernamePrompt, setShowUsernamePrompt] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // Stable updaters for the hook
+  // Stable updaters for the socket hook
   const handleSessionUpdate = useCallback((update: Updater<SessionState | null>) => {
     setSession(prev => typeof update === 'function' ? update(prev) : update);
   }, []);
@@ -49,13 +69,23 @@ const Session = () => {
     onCurrentUserUpdate: handleCurrentUserUpdate,
   });
 
+  // Emit a socket event carrying the acting user's identity.
+  const emitAsUser = useCallback((event: string, payload: Record<string, unknown> = {}) => {
+    if (socket && currentUser) socket.emit(event, { sessionId, userId: currentUser.id, ...payload });
+  }, [socket, currentUser, sessionId]);
+
+  // Same, but only when the current user holds the moderator role.
+  const emitAsModerator = useCallback((event: string, payload: Record<string, unknown> = {}) => {
+    if (socket && currentUser?.isModerator) socket.emit(event, { sessionId, userId: currentUser.id, ...payload });
+  }, [socket, currentUser, sessionId]);
+
   // Load session on mount
   useEffect(() => {
     const loadSession = async () => {
       try {
         const response = await getSession(sessionId);
         setSession(response.session);
-        
+
         const storedUserData = getUserSession(sessionId);
         if (storedUserData) {
           const user = response.session.users[storedUserData.userId];
@@ -93,18 +123,7 @@ const Session = () => {
   const handleCopyLink = async () => {
     const shareUrl = `${window.location.origin}/session/${sessionId}`;
     try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(shareUrl);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = shareUrl;
-        textArea.style.position = 'fixed';
-        textArea.style.opacity = '0';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
+      await copyText(shareUrl);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch {
@@ -124,20 +143,15 @@ const Session = () => {
     const confirm = () => { optimisticRef.current = null; };
     const rollback = () => {
       const pending = optimisticRef.current;
-      if (!pending) return;
       optimisticRef.current = null;
-      setSession(pending.snapshot);
+      if (pending) setSession(pending.snapshot);
     };
-    socket.on('vote-accepted', confirm);
-    socket.on('vote-submitted', confirm);
-    socket.on('voting-started', confirm);
-    socket.on('votes-reset', confirm);
+    // Events whose arrival means the optimistic mutation was accepted.
+    const confirmEvents = ['vote-accepted', 'vote-submitted', 'voting-started', 'votes-reset'] as const;
+    for (const event of confirmEvents) socket.on(event, confirm);
     socket.on('error', rollback);
     return () => {
-      socket.off('vote-accepted', confirm);
-      socket.off('vote-submitted', confirm);
-      socket.off('voting-started', confirm);
-      socket.off('votes-reset', confirm);
+      for (const event of confirmEvents) socket.off(event, confirm);
       socket.off('error', rollback);
     };
   }, [socket]);
@@ -202,60 +216,38 @@ const Session = () => {
     socket.emit('start-voting', { sessionId, userId: currentUser.id });
   }, [socket, currentUser, sessionId, stage]);
 
-  const handleStopRound = useCallback(() => {
-    if (socket && currentUser?.isModerator) socket.emit('stop-round', { sessionId, userId: currentUser.id });
-  }, [socket, currentUser, sessionId]);
-
-  const handleTestSound = useCallback(() => {
-    if (socket && currentUser?.isModerator) socket.emit('test-sound', { sessionId, userId: currentUser.id });
-  }, [socket, currentUser, sessionId]);
-
-  const handleUpdateCardSet = useCallback((cardSet: string[]) => {
-    if (socket && currentUser?.isModerator) socket.emit('update-card-set', { sessionId, userId: currentUser.id, cardSet });
-  }, [socket, currentUser, sessionId]);
+  const handleStopRound = useCallback(() => emitAsModerator('stop-round'), [emitAsModerator]);
+  const handleTestSound = useCallback(() => emitAsModerator('test-sound'), [emitAsModerator]);
+  const handleUpdateCardSet = useCallback((cardSet: string[]) => emitAsModerator('update-card-set', { cardSet }), [emitAsModerator]);
 
   const handleTransferModerator = useCallback((targetUserId: string) => {
-    if (socket && currentUser?.isModerator) socket.emit('transfer-moderator', { sessionId, currentModeratorId: currentUser.id, targetUserId });
-  }, [socket, currentUser, sessionId]);
+    if (!currentUser?.isModerator) return;
+    emitAsModerator('transfer-moderator', { currentModeratorId: currentUser.id, targetUserId });
+  }, [currentUser, emitAsModerator]);
 
   const handleCloseSession = useCallback(() => {
-    if (socket && currentUser?.isModerator) socket.emit('close-session', { sessionId, moderatorId: currentUser.id });
-  }, [socket, currentUser, sessionId]);
-
-  const handleUpdateUserName = useCallback((newName: string) => {
-    if (socket && currentUser) socket.emit('update-user-name', { sessionId, userId: currentUser.id, newName });
-  }, [socket, currentUser, sessionId]);
-
-  const handleStartVoteOut = useCallback((targetUserId: string) => {
-    if (socket && currentUser) {
-      socket.emit('start-vote-out', { sessionId, userId: currentUser.id, targetUserId });
-    }
-  }, [socket, currentUser, sessionId]);
-
-  const handleVoteOut = useCallback((vote: 'yes' | 'no') => {
-    if (socket && currentUser && session?.activeVoteOut) {
-      socket.emit('vote-out', {
-        sessionId,
-        userId: currentUser.id,
-        targetUserId: session.activeVoteOut.targetUserId,
-        vote,
-      });
-    }
-  }, [socket, currentUser, session, sessionId]);
-
-  const handleCancelVoteOut = useCallback(() => {
-    if (socket && currentUser) {
-      socket.emit('cancel-vote-out', { sessionId, userId: currentUser.id });
-    }
-  }, [socket, currentUser, sessionId]);
+    if (!currentUser?.isModerator) return;
+    emitAsModerator('close-session', { moderatorId: currentUser.id });
+  }, [currentUser, emitAsModerator]);
 
   const handleRemoveParticipant = useCallback((targetUserId: string) => {
-    if (socket && currentUser?.isModerator && session?.users[targetUserId]) {
-      if (confirm(`Are you sure you want to remove ${session.users[targetUserId].name} from the session?`)) {
-        socket.emit('remove-participant', { sessionId, userId: currentUser.id, targetUserId });
-      }
+    const target = session?.users[targetUserId];
+    if (!socket || !currentUser?.isModerator || !target) return;
+    if (confirm(`Are you sure you want to remove ${target.name} from the session?`)) {
+      socket.emit('remove-participant', { sessionId, userId: currentUser.id, targetUserId });
     }
   }, [socket, currentUser, session, sessionId]);
+
+  const handleUpdateUserName = useCallback((newName: string) => emitAsUser('update-user-name', { newName }), [emitAsUser]);
+
+  const handleStartVoteOut = useCallback((targetUserId: string) => emitAsUser('start-vote-out', { targetUserId }), [emitAsUser]);
+
+  const handleCancelVoteOut = useCallback(() => emitAsUser('cancel-vote-out'), [emitAsUser]);
+
+  const handleVoteOut = useCallback((vote: 'yes' | 'no') => {
+    const targetUserId = session?.activeVoteOut?.targetUserId;
+    if (targetUserId) emitAsUser('vote-out', { targetUserId, vote });
+  }, [session, emitAsUser]);
 
   const handleGoHome = useCallback(() => {
     try { removeUserSession(sessionId); } catch { /* nothing stored */ }
@@ -265,15 +257,15 @@ const Session = () => {
   const handleLeaveSession = useCallback(() => {
     if (!socket || !currentUser) return;
     if (!confirm('Are you sure you want to leave this session?')) return;
-    
+
     if (heartbeatRef.current) {
       stopHeartbeat(heartbeatRef.current);
       heartbeatRef.current = null;
     }
-    
+
     socket.emit('leave-session', { sessionId, userId: currentUser.id });
     removeUserSession(sessionId);
-    
+
     navigate('/session-closed', {
       state: { sessionTitle: session?.title || 'Planning Poker Session', moderatorName: session?.moderator || null, userLeft: true }
     });
@@ -321,7 +313,7 @@ const Session = () => {
 
   return (
     <>
-      <SEO title={`${session?.title || 'Session'} - Planning Poker`} description="Active Planning Poker estimation session." noindex={true} />
+      <SEO title={`${session.title} - Planning Poker`} description="Active Planning Poker estimation session." noindex={true} />
       <div className="relative">
         {isFlashing && <div className="fixed inset-0 bg-sage-400 opacity-30 z-50 pointer-events-none animate-pulse" />}
         <div className="container mx-auto px-4 py-6">
@@ -377,36 +369,36 @@ const Session = () => {
                 <UserList users={session.users} votes={session.votes} votedUserIds={session.votedUserIds || []} votingComplete={session.votingComplete} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onRemoveParticipant={handleRemoveParticipant} onUpdateUserName={handleUpdateUserName} activeVoteOut={session.activeVoteOut} onStartVoteOut={handleStartVoteOut} />
               </div>
               <div aria-live="polite">
-            {session.votingComplete ? (
-                <div className="card p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-semibold text-mocha-800">Voting Results</h3>
-                    {currentUser?.isModerator && (
-                      <button onClick={handleResetVotes} className="btn btn-primary px-3 py-1.5 text-xs min-h-[44px]">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                        New Round
-                      </button>
-                    )}
+                {session.votingComplete ? (
+                  <div className="card p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-base font-semibold text-mocha-800">Voting Results</h3>
+                      {currentUser?.isModerator && (
+                        <button onClick={handleResetVotes} className="btn btn-primary px-3 py-1.5 text-xs min-h-[44px]">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                          New Round
+                        </button>
+                      )}
+                    </div>
+                    <Results votes={session.votes} cardSet={session.cardSet ?? []} />
                   </div>
-                  <Results votes={session.votes} cardSet={session.cardSet ?? []} />
-                </div>
-              ) : session.isVotingOpen ? (
-                <VotingCards cardSet={session.cardSet ?? []} onVote={handleVote} currentUserVote={currentUser ? session.votes[currentUser.id] : null} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onStopRound={handleStopRound} />
-              ) : (
-                <div className="card p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-semibold text-mocha-800">Waiting for Voting to Start</h3>
-                    {currentUser?.isModerator && (
-                      <button onClick={handleStartVoting} className="btn btn-primary px-3 py-1.5 text-xs min-h-[44px]">
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" /></svg>
-                        Start Voting
-                      </button>
-                    )}
+                ) : session.isVotingOpen ? (
+                  <VotingCards cardSet={session.cardSet ?? []} onVote={handleVote} currentUserVote={currentUser ? session.votes[currentUser.id] : null} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onStopRound={handleStopRound} />
+                ) : (
+                  <div className="card p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-base font-semibold text-mocha-800">Waiting for Voting to Start</h3>
+                      {currentUser?.isModerator && (
+                        <button onClick={handleStartVoting} className="btn btn-primary px-3 py-1.5 text-xs min-h-[44px]">
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" /></svg>
+                          Start Voting
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-sm text-mocha-500">{currentUser?.isModerator ? "Click 'Start Voting' to begin a new voting round." : 'The moderator will start the voting round when ready.'}</p>
                   </div>
-                  <p className="text-sm text-mocha-500">{currentUser?.isModerator ? "Click 'Start Voting' to begin a new voting round." : 'The moderator will start the voting round when ready.'}</p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
