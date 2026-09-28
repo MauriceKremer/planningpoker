@@ -37,7 +37,14 @@ test.describe('Visual matrix — session view', () => {
       await seedSessionMembership(page, sessionId, userId, moderatorName);
       await page.goto(`/session/${sessionId}?theme=${theme.id}`);
       await expect(page.getByRole('heading', { name: 'Participants' })).toBeVisible();
-      await page.waitForTimeout(250); // socket sync settles before capture
+      // Socket sync settles before capture: the moderator hint renders only
+      // once the client is bound to the session room (join-session acked),
+      // and networkidle covers the seasonal backdrop — under parallel worker
+      // load a fixed sleep alone raced the screenshot. The seeded viewer is
+      // the moderator, so this is the bound-state indicator.
+      await expect(page.getByText(/Click 'Start Voting' to begin/i)).toBeVisible();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(250);
       // The session ID is unique per run — mask the ID line and share-link.
       await expect(page).toHaveScreenshot(`page-session-${theme.id}.png`, {
         mask: [page.locator('span.font-mono'), page.locator('code')],
