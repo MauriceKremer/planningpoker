@@ -1,14 +1,13 @@
 /**
  * Contract test for the shared socket-protocol schema (the single source of
- * truth the client validates incoming deltas against, and that the server will
- * validate its outgoing deltas against — M5.2).
+ * truth the client validates incoming deltas against, and that the server
+ * validates its outgoing deltas against).
  *
- * This is the "Contract" row of the plan's test strategy: a broken or
- * unrecognized payload must be rejected at the boundary, never reaching the
- * reducer as an unknown shape.
+ * A broken or unrecognized payload must be rejected at the boundary, never
+ * reaching the reducer as an unknown shape.
  */
 import { describe, it, expect } from 'vitest';
-import { validateEvent, eventValidators, type EventName } from '../events';
+import { validateEvent, eventSchemas, type EventName } from '../events';
 
 // A representative valid payload per event the reducer owns — mirrors the
 // fixtures in utils/__tests__/sessionDelta.test.js so the two halves of the
@@ -42,7 +41,7 @@ const VALID: Record<EventName, unknown> = {
 
 describe('protocol.validateEvent', () => {
     it('accepts a valid payload for every known event', () => {
-     for (const event of Object.keys(eventValidators) as EventName[]) {
+     for (const event of Object.keys(eventSchemas) as EventName[]) {
        const parsed = validateEvent(event, VALID[event]);
       expect(parsed, event).not.toBeNull();
       expect(typeof parsed, event).toBe('object');

@@ -2,23 +2,22 @@
  * Socket protocol contract — the single source of truth for server→client
  * broadcast payloads.
  *
- * M5 (TypeScript, domain-first). The plan requires that "client + server
- * valideren tegen dezelfde contractdefinitie": the zod schemas here are that
- * shared definition. The client uses them two ways:
+ * Client and server validate against the same contract definition: the zod
+ * schemas here are that shared definition. The client uses them two ways:
  *   1. `z.infer<...>` below produces the TypeScript types the reducer and hooks
  *      are checked against — compile-time parity.
- *   2. `parseX` / `validateEvent` are the runtime guards (defense-in-depth): a
- *      malformed or unexpected payload is rejected before it reaches the
- *      reducer, instead of silently producing a broken session.
+ *   2. `validateEvent` is the runtime guard (defense-in-depth): a malformed or
+ *      unexpected payload is rejected before it reaches the reducer, instead of
+ *      silently producing a broken session.
  *
- * The server is expected to validate its outgoing deltas against these exact
- * schemas (next M5 step, M5.2) — the same file, imported by both packages.
+ * The server validates its outgoing deltas against these exact schemas — the
+ * same schema shapes, imported by both packages.
  *
- * KISS: one schema per event, plain objects, no cross-package build step.
+ * One schema per event, plain objects, no cross-package build step.
  */
 import { z } from 'zod';
 
-// ── Primitive building blocks ───────────────────────────────────────────────
+// ── Primitive building blocks ────────────────────────────────────────────────
 
 /** A single card label in a card set (e.g. "8", "XS", "∞"). */
 export const cardSetItem = z.string();
@@ -29,14 +28,14 @@ export const cardSetItem = z.string();
  * partial user object (e.g. a moderator swap) still validates.
  */
 export const userSchema = z.object({
-   id: z.string(),
+  id: z.string(),
   name: z.string(),
-   isModerator: z.boolean(),
-   isOnline: z.boolean(),
-   joinedAt: z.string().optional(),
-   lastSeen: z.string().optional(),
-   connectedAt: z.string().optional(),
-   countdownSeconds: z.number().optional(),
+  isModerator: z.boolean(),
+  isOnline: z.boolean(),
+  joinedAt: z.string().optional(),
+  lastSeen: z.string().optional(),
+  connectedAt: z.string().optional(),
+  countdownSeconds: z.number().optional(),
 });
 export type User = z.infer<typeof userSchema>;
 
@@ -52,72 +51,72 @@ export type VotesMap = z.infer<typeof votesMap>;
  * `votingComplete`).
  */
 export const voteSubmittedSchema = z.object({
-   userId: z.string(),
-   hasVoted: z.boolean().optional(),
-   votingComplete: z.boolean(),
-   isVotingOpen: z.boolean(),
+  userId: z.string(),
+  hasVoted: z.boolean().optional(),
+  votingComplete: z.boolean(),
+  isVotingOpen: z.boolean(),
   votes: votesMap.nullable(),
-   votedUserIds: z.array(z.string()),
-   voteCount: z.number().optional(),
-   totalUsers: z.number().optional(),
+  votedUserIds: z.array(z.string()),
+  voteCount: z.number().optional(),
+  totalUsers: z.number().optional(),
 });
 
 /** Targeted echo to the voter only: the server-confirmed card value. */
 export const voteAcceptedSchema = z.object({
-   userId: z.string(),
-   vote: z.string(),
-   votingComplete: z.boolean(),
-   isVotingOpen: z.boolean(),
+  userId: z.string(),
+  vote: z.string(),
+  votingComplete: z.boolean(),
+  isVotingOpen: z.boolean(),
 });
 
 export const votesResetSchema = z.object({
-   isVotingOpen: z.boolean(),
-   votingComplete: z.boolean(),
-   votes: votesMap,
+  isVotingOpen: z.boolean(),
+  votingComplete: z.boolean(),
+  votes: votesMap,
 });
 
 export const votingStartedSchema = z.object({
-   isVotingOpen: z.boolean(),
-   votingComplete: z.boolean(),
-   votes: votesMap,
-   round: z.number().optional(),
-   cardSet: z.array(cardSetItem).optional(),
+  isVotingOpen: z.boolean(),
+  votingComplete: z.boolean(),
+  votes: votesMap,
+  round: z.number().optional(),
+  cardSet: z.array(cardSetItem).optional(),
 });
 
 export const roundStoppedSchema = z.object({
-   isVotingOpen: z.boolean(),
-   votingComplete: z.boolean(),
-   votes: votesMap,
-   round: z.number().optional(),
-   stoppedBy: z.string().optional(),
+  isVotingOpen: z.boolean(),
+  votingComplete: z.boolean(),
+  votes: votesMap,
+  round: z.number().optional(),
+  stoppedBy: z.string().optional(),
 });
 
 export const cardSetUpdatedSchema = z.object({
-   cardSet: z.array(cardSetItem),
+  cardSet: z.array(cardSetItem),
   isVotingOpen: z.boolean(),
-   votingComplete: z.boolean(),
-   votes: votesMap,
-   updatedBy: z.string().optional(),
+  votingComplete: z.boolean(),
+  votes: votesMap,
+  updatedBy: z.string().optional(),
 });
 
 export const activeVoteOutStateSchema = z.object({
-   targetUserId: z.string(),
-   targetUserName: z.string().nullable().optional(),
-   initiatedByUserId: z.string(),
-   initiatedByName: z.string().optional(),
-   eligibleVoters: z.array(z.string()),
-   yesVotes: z.number(),
-   noVotes: z.number(),
-   requiredYesVotes: z.number(),
-   thresholdPercent: z.number(),
+  targetUserId: z.string(),
+  targetUserName: z.string().nullable().optional(),
+  initiatedByUserId: z.string(),
+  initiatedByName: z.string().optional(),
+  eligibleVoters: z.array(z.string()),
+  yesVotes: z.number(),
+  noVotes: z.number(),
+  requiredYesVotes: z.number(),
+  thresholdPercent: z.number(),
 });
 export type ActiveVoteOutState = z.infer<typeof activeVoteOutStateSchema>;
 
 export const voteOutCastSchema = z.object({
-   targetUserId: z.string(),
-   yesVotes: z.number(),
-   noVotes: z.number(),
-   requiredYesVotes: z.number(),
+  targetUserId: z.string(),
+  yesVotes: z.number(),
+  noVotes: z.number(),
+  requiredYesVotes: z.number(),
 });
 
 /** Emitted when a vote-out resolves; the reducer only clears local state. */
@@ -132,65 +131,65 @@ export const voteOutEndedSchema = z
 export const userJoinedSchema = z.object({ user: userSchema });
 
 export const userDisconnectedSchema = z.object({
-   userId: z.string(),
-   user: userSchema,
+  userId: z.string(),
+  user: userSchema,
 });
 
 export const userCountdownSchema = z.object({
-   userId: z.string(),
+  userId: z.string(),
   user: userSchema,
   remainingSeconds: z.number(),
 });
 
 export const userNameUpdatedSchema = z.object({
-   userId: z.string(),
-   oldName: z.string(),
-   newName: z.string(),
-   user: userSchema,
-   isModeratorNameUpdate: z.boolean().optional(),
-   moderatorName: z.string().optional(),
+  userId: z.string(),
+  oldName: z.string(),
+  newName: z.string(),
+  user: userSchema,
+  isModeratorNameUpdate: z.boolean().optional(),
+  moderatorName: z.string().optional(),
 });
 
 export const moderatorChangedSchema = z.object({
-   newModeratorId: z.string(),
-   newModeratorName: z.string().nullable().optional(),
-   previousModeratorId: z.string(),
-   previousModeratorName: z.string().nullable().optional(),
-   newModerator: userSchema.nullable().optional(),
-   previousModerator: userSchema.nullable().optional(),
-   wasManualTransfer: z.boolean().optional(),
+  newModeratorId: z.string(),
+  newModeratorName: z.string().nullable().optional(),
+  previousModeratorId: z.string(),
+  previousModeratorName: z.string().nullable().optional(),
+  newModerator: userSchema.nullable().optional(),
+  previousModerator: userSchema.nullable().optional(),
+  wasManualTransfer: z.boolean().optional(),
 });
 
 export const participantRemovedSchema = z.object({
-   userId: z.string(),
-   user: userSchema.optional(),
-   removedBy: z.string().optional(),
-   reason: z.string().optional(),
+  userId: z.string(),
+  user: userSchema.optional(),
+  removedBy: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 /** Initial full-state load — the only event that still ships the whole
  *  session. Handled by the hook, not the reducer. */
 export const sessionJoinedSchema = z.object({
-   session: z.unknown(),
+  session: z.unknown(),
 });
 
 /** Same session opened from another client; the current one must leave. */
 export const connectionConflictSchema = z.object({
-   message: z.string().optional(),
+  message: z.string().optional(),
 });
 
 export const sessionClosedSchema = z.object({
-   sessionTitle: z.string(),
+  sessionTitle: z.string(),
   moderatorName: z.string().nullable().optional(),
 });
 
 export const youWereRemovedSchema = z.object({
-   reason: z.string(),
-   removedBy: z.string(),
+  reason: z.string(),
+  removedBy: z.string(),
 });
 
 export const sessionCleanupSchema = z.object({
-   message: z.string(),
+  message: z.string(),
 });
 
 /** No payload — a UI-only nudge to play the voting chime. */
@@ -199,37 +198,37 @@ export const testSoundTriggerSchema = z.object({}).passthrough();
 /** No payload — ack of an optimistic `leave-session`. */
 export const leaveAcknowledgedSchema = z.object({}).passthrough();
 
-// ── The union ────────────────────────────────────────────────────────────────
+// ── The registry ─────────────────────────────────────────────────────────────
 
 /**
- * Maps each event name to its payload schema. The reducer's payload type, the
- * `EVENT_SCHEMAS` registry below, and this interface all derive from the same
- * schemas, so a new event can't sneak in one place without the others matching.
+ * Maps each event name to its payload schema. The reducer's payload type and
+ * the runtime validation below both derive from this one registry, so a new
+ * event can't sneak in one place without the others matching.
  */
 export const eventSchemas = {
-   'vote-submitted': voteSubmittedSchema,
+  'vote-submitted': voteSubmittedSchema,
   'vote-accepted': voteAcceptedSchema,
-   'votes-reset': votesResetSchema,
-   'voting-started': votingStartedSchema,
-   'round-stopped': roundStoppedSchema,
-   'card-set-updated': cardSetUpdatedSchema,
-   'vote-out-started': activeVoteOutStateSchema,
-   'vote-out-cast': voteOutCastSchema,
-   'vote-out-ended': voteOutEndedSchema,
-   'user-joined': userJoinedSchema,
-   'user-disconnected': userDisconnectedSchema,
-   'user-countdown': userCountdownSchema,
-   'user-name-updated': userNameUpdatedSchema,
-   'moderator-changed': moderatorChangedSchema,
-   'participant-removed': participantRemovedSchema,
-   'participant-auto-removed': participantRemovedSchema,
-   'session-joined': sessionJoinedSchema,
-   'connection-conflict': connectionConflictSchema,
-   'session-closed': sessionClosedSchema,
-   'you-were-removed': youWereRemovedSchema,
-   'session-cleanup': sessionCleanupSchema,
-   'test-sound-trigger': testSoundTriggerSchema,
-   'leave-acknowledged': leaveAcknowledgedSchema,
+  'votes-reset': votesResetSchema,
+  'voting-started': votingStartedSchema,
+  'round-stopped': roundStoppedSchema,
+  'card-set-updated': cardSetUpdatedSchema,
+  'vote-out-started': activeVoteOutStateSchema,
+  'vote-out-cast': voteOutCastSchema,
+  'vote-out-ended': voteOutEndedSchema,
+  'user-joined': userJoinedSchema,
+  'user-disconnected': userDisconnectedSchema,
+  'user-countdown': userCountdownSchema,
+  'user-name-updated': userNameUpdatedSchema,
+  'moderator-changed': moderatorChangedSchema,
+  'participant-removed': participantRemovedSchema,
+  'participant-auto-removed': participantRemovedSchema,
+  'session-joined': sessionJoinedSchema,
+  'connection-conflict': connectionConflictSchema,
+  'session-closed': sessionClosedSchema,
+  'you-were-removed': youWereRemovedSchema,
+  'session-cleanup': sessionCleanupSchema,
+  'test-sound-trigger': testSoundTriggerSchema,
+  'leave-acknowledged': leaveAcknowledgedSchema,
 } as const;
 
 /** Every event name the client knows how to receive. */
@@ -249,39 +248,8 @@ export type EventPayload<E extends EventName = EventName> =
  * args, which the compiler won't narrow correlatedly — a known TS limitation).
  */
 export type EventInput = {
-   [K in EventName]: { event: K; data: EventPayload<K> };
+  [K in EventName]: { event: K; data: EventPayload<K> };
 }[EventName];
-
-/**
- * Runtime registry of validators, keyed by the same names. `validateEvent`
- * looks up the validator by event name so the reducer's dispatch and the
- * validation stay in lock-step.
- */
-export const eventValidators = {
-   'vote-submitted': voteSubmittedSchema,
-   'vote-accepted': voteAcceptedSchema,
-   'votes-reset': votesResetSchema,
-   'voting-started': votingStartedSchema,
-   'round-stopped': roundStoppedSchema,
-   'card-set-updated': cardSetUpdatedSchema,
-   'vote-out-started': activeVoteOutStateSchema,
-   'vote-out-cast': voteOutCastSchema,
-   'vote-out-ended': voteOutEndedSchema,
-   'user-joined': userJoinedSchema,
-   'user-disconnected': userDisconnectedSchema,
-   'user-countdown': userCountdownSchema,
-   'user-name-updated': userNameUpdatedSchema,
-   'moderator-changed': moderatorChangedSchema,
-   'participant-removed': participantRemovedSchema,
-   'participant-auto-removed': participantRemovedSchema,
-   'session-joined': sessionJoinedSchema,
-   'connection-conflict': connectionConflictSchema,
-   'session-closed': sessionClosedSchema,
-   'you-were-removed': youWereRemovedSchema,
-   'session-cleanup': sessionCleanupSchema,
-   'test-sound-trigger': testSoundTriggerSchema,
-   'leave-acknowledged': leaveAcknowledgedSchema,
-} as const;
 
 /**
  * Validate a raw socket payload against its event's schema.
@@ -295,12 +263,12 @@ export const validateEvent = <E extends EventName>(
   event: E,
   data: unknown,
 ): EventPayload<E> | null => {
-  const validator = eventValidators[event];
-   if (!validator) return null;
+  const validator = eventSchemas[event];
+  if (!validator) return null;
   const result = validator.safeParse(data);
   if (!result.success) return null;
-   // safeParse already confirmed the value matches `validator` (the schema for
-   // this exact event), so the typed cast is a sound post-condition — not a
-   // value of unknown shape.
+  // safeParse already confirmed the value matches `validator` (the schema for
+  // this exact event), so the typed cast is a sound post-condition — not a
+  // value of unknown shape.
   return result.data as EventPayload<E>;
 };

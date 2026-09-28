@@ -42,13 +42,35 @@ const FAQS = [
   },
 ];
 
-const About = () => {
+const TAB_ACTIVE = 'border-ember-500 text-ember-700';
+const TAB_INACTIVE = 'border-transparent text-mocha-400 hover:text-mocha-600 hover:border-cream-400';
+
+const TabButton = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${active ? TAB_ACTIVE : TAB_INACTIVE}`}
+  >
+    {label}
+  </button>
+);
+
+const BackToHomeButton = () => {
   const navigate = useNavigate();
+  return (
+    <div className="mt-7 pt-5 border-t border-cream-300">
+      <button onClick={() => navigate('/')} className="btn btn-secondary px-4 py-2">
+        ← Back to Home
+      </button>
+    </div>
+  );
+};
+
+const About = () => {
   const [activeTab, setActiveTab] = useState('manual');
 
   return (
     <>
-      <SEO 
+      <SEO
         title="About Planning Poker - User Guide & Privacy Policy"
         description="Learn how to use Planning Poker for Agile estimation. Free user manual, privacy policy, and tips for effective remote sprint planning."
         url="https://planningpoker.bytecoder.nl/about"
@@ -65,45 +87,27 @@ const About = () => {
         })}</script>
       </Helmet>
       <div className="max-w-4xl mx-auto card-lg">
-      <h1 className="text-2xl font-bold text-mocha-800 px-5 pt-5">Planning Poker — User Guide &amp; Privacy Policy</h1>
-      {/* Tab Navigation */}
-      <div className="border-b border-cream-300 rounded-t-xl">
-        <nav className="flex -mb-px">
-          <button
-            onClick={() => setActiveTab('manual')}
-            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'manual'
-                ? 'border-ember-500 text-ember-700'
-                : 'border-transparent text-mocha-400 hover:text-mocha-600 hover:border-cream-400'
-            }`}
-          >
-            User Manual
-          </button>
-          <button
-            onClick={() => setActiveTab('privacy')}
-            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'privacy'
-                ? 'border-ember-500 text-ember-700'
-                : 'border-transparent text-mocha-400 hover:text-mocha-600 hover:border-cream-400'
-            }`}
-          >
-            Privacy Policy
-          </button>
-        </nav>
-      </div>
+        <h1 className="text-2xl font-bold text-mocha-800 px-5 pt-5">Planning Poker — User Guide &amp; Privacy Policy</h1>
 
-      {/* Tab Content — both panels are always rendered and toggled with the
-          `hidden` attribute rather than mounted/unmounted. Non-JS crawlers
-          (and the M3 pre-render) then see the full manual AND privacy policy,
-          not just the tab that happens to be active. */}
-      <div className="p-5">
-        <div className="prose max-w-none" hidden={activeTab !== 'manual'}>
+        <div className="border-b border-cream-300 rounded-t-xl">
+          <nav className="flex -mb-px">
+            <TabButton label="User Manual" active={activeTab === 'manual'} onClick={() => setActiveTab('manual')} />
+            <TabButton label="Privacy Policy" active={activeTab === 'privacy'} onClick={() => setActiveTab('privacy')} />
+          </nav>
+        </div>
+
+        {/* Both panels are always rendered and toggled with the `hidden`
+            attribute rather than mounted/unmounted, so non-JS crawlers and the
+            pre-render see the full manual AND privacy policy, not just the
+            tab that happens to be active. */}
+        <div className="p-5">
+          <div className="prose max-w-none" hidden={activeTab !== 'manual'}>
             <h2 className="text-2xl font-bold mb-4">User Manual</h2>
-            
+
             <section className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Getting Started</h3>
               <p className="mb-3">
-                Planning Poker is a collaborative estimation tool for Agile teams. Use it to estimate 
+                Planning Poker is a collaborative estimation tool for Agile teams. Use it to estimate
                 story points, effort, or complexity for your project tasks in real-time with your team.
               </p>
             </section>
@@ -175,7 +179,7 @@ const About = () => {
             </section>
 
             <section className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Tips & Best Practices</h3>
+              <h3 className="text-xl font-semibold mb-2">Tips &amp; Best Practices</h3>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Use the card set that best fits your team's estimation style</li>
                 <li>Discuss estimates after reveal to reach consensus</li>
@@ -192,53 +196,46 @@ const About = () => {
                 <div>
                   <p className="font-medium">Session not found?</p>
                   <p className="text-sm text-mocha-500 ml-4">
-                    Sessions expire automatically. The moderator may have closed it, it may have 
-                    been inactive for too long, or the server may have restarted. Create a new 
+                    Sessions expire automatically. The moderator may have closed it, it may have
+                    been inactive for too long, or the server may have restarted. Create a new
                     session to continue.
                   </p>
                 </div>
                 <div>
                   <p className="font-medium">Can't hear notifications?</p>
                   <p className="text-sm text-mocha-500 ml-4">
-                    Click anywhere on the page first to enable audio. Some browsers block audio 
+                    Click anywhere on the page first to enable audio. Some browsers block audio
                     until you interact with the page.
                   </p>
                 </div>
                 <div>
                   <p className="font-medium">Lost your session after refresh?</p>
                   <p className="text-sm text-mocha-500 ml-4">
-                    Your session should persist automatically. If it doesn't, you may be in private 
+                    Your session should persist automatically. If it doesn't, you may be in private
                     browsing mode or have cleared your browser data. Use the session link to rejoin.
                   </p>
                 </div>
               </div>
             </section>
 
-            <div className="mt-7 pt-5 border-t border-cream-300">
-              <button
-                onClick={() => navigate('/')}
-                className="btn btn-secondary px-4 py-2"
-              >
-                ← Back to Home
-              </button>
-            </div>
-        </div>
+            <BackToHomeButton />
+          </div>
 
-        <div className="prose max-w-none" hidden={activeTab !== 'privacy'}>
+          <div className="prose max-w-none" hidden={activeTab !== 'privacy'}>
             <h2 className="text-2xl font-bold mb-4">Privacy Policy</h2>
             <p className="text-sm text-mocha-400 mb-5"><strong>Last Updated: 21 September 2026</strong></p>
 
             <section className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Introduction</h3>
               <p>
-                This Planning Poker application is designed with privacy as a core principle. The policy below 
+                This Planning Poker application is designed with privacy as a core principle. The policy below
                 describes what data is collected, how it is used, and how it is protected.
               </p>
             </section>
 
             <section className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Data Collected</h3>
-              
+
               <h4 className="text-lg font-medium mt-4 mb-2">Session Data (Temporary)</h4>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li><strong>Session IDs:</strong> Randomly generated 8-character uppercase hexadecimal codes (A–F, 0–9)</li>
@@ -277,7 +274,7 @@ const About = () => {
 
             <section className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Use of Data</h3>
-              
+
               <h4 className="text-lg font-medium mt-4 mb-2">Session Management</h4>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Display your chosen name to other session participants</li>
@@ -287,7 +284,7 @@ const About = () => {
                 <li>Remember your card set preference for future sessions (stored locally only)</li>
               </ul>
 
-              <h4 className="text-lg font-medium mt-4 mb-2">Security & Integrity</h4>
+              <h4 className="text-lg font-medium mt-4 mb-2">Security &amp; Integrity</h4>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Prevent duplicate connections from the same user account</li>
                 <li>Detect and remove inactive participants</li>
@@ -304,8 +301,8 @@ const About = () => {
             </section>
 
             <section className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Data Storage & Retention</h3>
-              
+              <h3 className="text-xl font-semibold mb-2">Data Storage &amp; Retention</h3>
+
               <h4 className="text-lg font-medium mt-4 mb-2">In-Memory Storage</h4>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>All session data is stored temporarily in the server's process-local memory</li>
@@ -334,7 +331,7 @@ const About = () => {
 
             <section className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Data Security</h3>
-              
+
               <h4 className="text-lg font-medium mt-4 mb-2">Connection Security</h4>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li><strong>Conflict Detection:</strong> Prevents session hijacking by automatically disconnecting duplicate connections</li>
@@ -368,8 +365,8 @@ const About = () => {
 
             <section className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Your Privacy Rights</h3>
-              
-              <h4 className="text-lg font-medium mt-4 mb-2">Access & Control</h4>
+
+              <h4 className="text-lg font-medium mt-4 mb-2">Access &amp; Control</h4>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li><strong>View Your Data:</strong> All data you create (name, votes) is visible to you and other session participants</li>
                 <li><strong>Delete Your Data:</strong> Leave a session or wait 25 minutes of inactivity for automatic removal</li>
@@ -393,7 +390,7 @@ const About = () => {
             </section>
 
             <section className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Data Sharing & Third Parties</h3>
+              <h3 className="text-xl font-semibold mb-2">Data Sharing &amp; Third Parties</h3>
               <p className="mb-3">No sharing, selling, or transmission of data to any third parties:</p>
               <ul className="list-none space-y-1">
                 <li>❌ No analytics providers</li>
@@ -402,7 +399,7 @@ const About = () => {
                 <li>❌ No external APIs</li>
                 <li>❌ No third‑party data warehousing</li>
               </ul>
-              
+
               <p className="mt-4 mb-2">The only data transmission occurs:</p>
               <ol className="list-decimal list-inside space-y-1 ml-4">
                 <li><strong>Client ↔ Service:</strong> Your browser communicates with the hosted application</li>
@@ -437,7 +434,7 @@ const About = () => {
             </section>
 
             <section className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Private Browsing & Storage Restrictions</h3>
+              <h3 className="text-xl font-semibold mb-2">Private Browsing &amp; Storage Restrictions</h3>
               <p>
                 The application supports private/incognito browsing modes: if localStorage is
                 unavailable, fallback mechanisms use sessionStorage; if both are restricted,
@@ -459,15 +456,15 @@ const About = () => {
             <section className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Code Transparency</h3>
               <p>
-                The source code can be made available for security and privacy inspection upon request. 
-                A valid support contribution (e.g. subscription, or sponsorship) is expected to sustain 
+                The source code can be made available for security and privacy inspection upon request.
+                A valid support contribution (e.g. subscription, or sponsorship) is expected to sustain
                 continued access.
               </p>
             </section>
 
             <section className="mb-6">
               <h3 className="text-xl font-semibold mb-2">Compliance</h3>
-              
+
               <h4 className="text-lg font-medium mt-4 mb-2">GDPR (European Users)</h4>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li><strong>Lawful Basis:</strong> Legitimate interest (session functionality)</li>
@@ -486,7 +483,7 @@ const About = () => {
 
               <h4 className="text-lg font-medium mt-4 mb-2">Other Privacy Laws</h4>
               <p>
-                Our minimal, temporary data model (no PII, no tracking) supports broad alignment with 
+                Our minimal, temporary data model (no PII, no tracking) supports broad alignment with
                 global privacy principles.
               </p>
             </section>
@@ -503,48 +500,41 @@ const About = () => {
                 <li>✅ <strong>Transparency:</strong> Code view available (with contribution)</li>
               </ul>
               <p className="mt-4 text-sm font-medium">
-                <strong>Bottom Line:</strong> Only short-lived session data required for collaborative 
-                estimation is retained and removed automatically. User preferences (like card set 
+                <strong>Bottom Line:</strong> Only short-lived session data required for collaborative
+                estimation is retained and removed automatically. User preferences (like card set
                 choice) are stored locally in your browser for convenience and never shared.
               </p>
             </section>
 
-            <div className="mt-7 pt-5 border-t border-cream-300">
-              <button
-                onClick={() => navigate('/')}
-                className="btn btn-secondary px-4 py-2"
-              >
-                ← Back to Home
-              </button>
-            </div>
-        </div>
-
-        {/* FAQ — always visible at the bottom of the About page, regardless of tab */}
-        <section className="mt-2 mb-6">
-          <h2 className="text-xl font-semibold mb-2">Frequently Asked Questions</h2>
-          <div className="space-y-3">
-            {FAQS.map(({ q, a }) => (
-              <div key={q}>
-                <p className="font-medium">{q}</p>
-                <p className="text-sm text-mocha-500 ml-4">{a}</p>
-              </div>
-            ))}
+            <BackToHomeButton />
           </div>
-        </section>
 
-        {/* Author — visible on both tabs, so the pre-rendered page (and any
-            visitor deciding whether to trust this free, anonymous tool) always
-            sees the real person who built it. */}
-        <section className="mt-2 mb-6 panel-honey">
-          <h2 className="text-base font-semibold mb-2.5 text-mocha-800">Built by Maurice Kremer</h2>
-          <p className="text-sm text-mocha-600 mb-3">
-            Planning Poker is an independent passion project, built and maintained in spare
-            time. Questions, feedback or ideas for the tool are always welcome.
-          </p>
-          <AuthorLinks />
-        </section>
+          {/* FAQ — always visible at the bottom of the About page, regardless of tab */}
+          <section className="mt-2 mb-6">
+            <h2 className="text-xl font-semibold mb-2">Frequently Asked Questions</h2>
+            <div className="space-y-3">
+              {FAQS.map(({ q, a }) => (
+                <div key={q}>
+                  <p className="font-medium">{q}</p>
+                  <p className="text-sm text-mocha-500 ml-4">{a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Author — visible on both tabs, so the pre-rendered page (and any
+              visitor deciding whether to trust this free, anonymous tool) always
+              sees the real person who built it. */}
+          <section className="mt-2 mb-6 panel-honey">
+            <h2 className="text-base font-semibold mb-2.5 text-mocha-800">Built by Maurice Kremer</h2>
+            <p className="text-sm text-mocha-600 mb-3">
+              Planning Poker is an independent passion project, built and maintained in spare
+              time. Questions, feedback or ideas for the tool are always welcome.
+            </p>
+            <AuthorLinks />
+          </section>
+        </div>
       </div>
-    </div>
     </>
   );
 };
