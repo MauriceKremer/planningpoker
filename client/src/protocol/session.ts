@@ -41,8 +41,10 @@ export interface SessionUser {
     [key: string]: unknown;
 }
 
-/** The info the UI shows on a closed/replaced session. */
 export interface SessionClosedInfo {
    sessionTitle: string;
    moderatorName: string | null;
 }
+
+/** A state setter that accepts either a value or an updater function. */
+export type Updater<T> = T | ((prev: T) => T);

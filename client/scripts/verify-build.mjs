@@ -26,11 +26,18 @@ import { gzipSync } from 'zlib';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-// Frozen M4 ceiling for the main JS bundle (gzip). React 19 raised it ~24%
-// (98.9 -> 122.3 kB gzip); this freezes it just above the new baseline with a
-// few percent of headroom. Enforced here (deterministic per build) rather than
-// in Lighthouse.
-const MAX_JS_GZIP_BYTES = 128000;
+// Frozen ceiling for the main JS bundle (gzip).
+//
+// M4: React 19 raised it ~24% (98.9 -> 122.3 kB gzip); frozen just above that
+// baseline at 128 kB.
+//
+// M5: 150.3 kB — the typed socket protocol layer added `zod` (shared contract
+// schemas, validated on both sides) and restored the socket layer behind the
+// typed `useSessionSocket`. The growth is the contract dependency itself, not
+// accidental bloat (zod/mini or route-level chunking can reclaim it later);
+// real chunking / critical CSS is M6 work, so the ceiling is re-frozen at
+// 160 kB with that context.
+const MAX_JS_GZIP_BYTES = 160000;
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const build = join(root, 'build');
