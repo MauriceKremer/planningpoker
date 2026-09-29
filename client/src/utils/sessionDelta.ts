@@ -24,7 +24,8 @@ const revealedVotes = (votes: SessionState['votes'] | undefined) => ({
 });
 
 /**
- * The fully-typed reducer core.
+ * The reducer core: switch over the discriminated `EventInput` union, because
+ * TypeScript cannot narrow a conditional over two loose arguments.
  */
 const applyEventInput = (prev: SessionState, input: EventInput): SessionState => {
   const { event, data } = input;
@@ -164,13 +165,9 @@ const applyEventInput = (prev: SessionState, input: EventInput): SessionState =>
 };
 
 /**
- * 3-arg façade preserving the historical call signature
- * `applyEvent(prev, event, data)` used by the socket hook and the tests.
- *
- * `event` and `data` are bundled into the discriminated `EventInput` so the
- * core reducer gets its per-event narrowing. The cast is a single, justified
- * boundary (the values come straight from a call site that was checked against
- * `EventPayload<E>`), not a value of unknown shape.
+ * Merge a server delta into the session state. Call sites are checked against
+ * `EventPayload<E>`; the cast into the discriminated union is the single
+ * narrowing boundary.
  */
 export const applyEvent = <E extends EventName = EventName>(
   prev: SessionState,

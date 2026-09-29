@@ -10,8 +10,6 @@ import {
   saveUserSession,
   getUserSession,
   clearAllSessionData,
-  getStorageBackend,
-  getStorageInfo,
 } from '../sessionStorage';
 
 const VALID_ID = 'ABC12345'; // 8-char uppercase hex, matches SESSION_ID_PATTERN
@@ -42,23 +40,6 @@ beforeEach(() => {
 afterAll(() => {
   setStorage('localStorage', originalLocalStorage);
   setStorage('sessionStorage', originalSessionStorage);
-});
-
-describe('backing store resolution', () => {
-  test('prefers localStorage when it is available', () => {
-    expect(getStorageBackend()).toBe('localStorage');
-  });
-
-  test('falls back to sessionStorage when localStorage is blocked', () => {
-    setStorage('localStorage', makeThrowingStorage());
-    expect(getStorageBackend()).toBe('sessionStorage');
-  });
-
-  test('reports null backend when everything is blocked', () => {
-    setStorage('localStorage', makeThrowingStorage());
-    setStorage('sessionStorage', makeThrowingStorage());
-    expect(getStorageBackend()).toBeNull();
-  });
 });
 
 describe('save / get', () => {
@@ -92,11 +73,6 @@ describe('cleanup', () => {
     saveUserSession(VALID_ID, userData);
     clearAllSessionData();
     expect(getUserSession(VALID_ID)).toBeNull();
-    expect(getStorageInfo()).toMatchObject({ userSessions: 0 });
-  });
-
-  test('getStorageInfo reports the active backend name', () => {
-    saveUserSession(VALID_ID, userData);
-    expect(getStorageInfo()).toMatchObject({ backend: 'localStorage', userSessions: 1 });
+    expect(localStorage.getItem('planningpoker_user_sessions')).toBeNull();
   });
 });

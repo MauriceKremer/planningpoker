@@ -165,11 +165,22 @@ const Session = () => {
     }, 2500);
   }, []);
 
-  const handleVote = useCallback((vote: string) => {
+  const act = useCallback((event: string, payload: Record<string, unknown>, apply: (prev: SessionState) => SessionState | null) => {
     if (!socket || !currentUser) return;
     setSession(prev => {
-      if (!prev || !prev.isVotingOpen || prev.votingComplete) return prev;
+      if (!prev) return prev;
+      const next = apply(prev);
+      if (!next) return prev;
       stage(prev);
+      return next;
+    });
+    socket.emit(event, { sessionId, userId: currentUser.id, ...payload });
+  }, [socket, currentUser, sessionId, stage]);
+
+  const handleVote = useCallback((vote: string) => {
+    if (!currentUser) return;
+    act('submit-vote', { vote }, prev => {
+      if (!prev.isVotingOpen || prev.votingComplete) return null;
       // Render the selection before the server answers: own card value, the
       // voted marker, and — when this vote completes the round — the reveal.
       // The authoritative vote-submitted / vote-accepted delta replaces this;
@@ -178,43 +189,29 @@ const Session = () => {
       const alreadyVoted = (prev.votedUserIds ?? []).includes(currentUser.id);
       const votingComplete = userCount > 0
         && (prev.votedUserIds?.length ?? 0) + (alreadyVoted ? 0 : 1) >= userCount;
-      let next = applyEvent(prev, 'vote-accepted', {
+      const accepted = applyEvent(prev, 'vote-accepted', {
         userId: currentUser.id, vote, votingComplete: false, isVotingOpen: true,
       });
-      next = applyEvent(next, 'vote-submitted', {
+      return applyEvent(accepted, 'vote-submitted', {
         userId: currentUser.id, hasVoted: true,
         votingComplete, isVotingOpen: true,
         votes: null,
         votedUserIds: [...(prev.votedUserIds ?? []), currentUser.id],
       });
-      return next;
     });
-    socket.emit('submit-vote', { sessionId, userId: currentUser.id, vote });
-  }, [socket, currentUser, sessionId, stage]);
+  }, [act, currentUser]);
 
   const handleResetVotes = useCallback(() => {
-    if (!socket) return;
-    setSession(prev => {
-      if (!prev || !prev.votingComplete) return prev;
-      stage(prev);
-      return applyEvent(prev, 'votes-reset', {
-        isVotingOpen: true, votingComplete: false, votes: {},
-      });
-    });
-    socket.emit('reset-votes', { sessionId });
-  }, [socket, sessionId, stage]);
+    act('reset-votes', {}, prev => prev.votingComplete ? applyEvent(prev, 'votes-reset', {
+      isVotingOpen: true, votingComplete: false, votes: {},
+    }) : null);
+  }, [act]);
 
   const handleStartVoting = useCallback(() => {
-    if (!socket || !currentUser) return;
-    setSession(prev => {
-      if (!prev || prev.isVotingOpen) return prev;
-      stage(prev);
-      return applyEvent(prev, 'voting-started', {
-        isVotingOpen: true, votingComplete: false, votes: {},
-      });
-    });
-    socket.emit('start-voting', { sessionId, userId: currentUser.id });
-  }, [socket, currentUser, sessionId, stage]);
+    act('start-voting', {}, prev => prev.isVotingOpen ? null : applyEvent(prev, 'voting-started', {
+      isVotingOpen: true, votingComplete: false, votes: {},
+    }));
+  }, [act]);
 
   const handleStopRound = useCallback(() => emitAsModerator('stop-round'), [emitAsModerator]);
   const handleTestSound = useCallback(() => emitAsModerator('test-sound'), [emitAsModerator]);

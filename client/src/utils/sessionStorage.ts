@@ -136,12 +136,6 @@ const pruneExpired = (store: Storage): void => {
 };
 
 /**
- * Report which backing store is currently in use, or null when neither is
- * available. Useful for debugging / the privacy "no data stored" guarantee.
- */
-export const getStorageBackend = (): Backend | null => resolveBackend();
-
-/**
  * Save user session data to the resolved store (localStorage, else sessionStorage).
  * Returns false when the session ID is invalid or no store is available.
  */
@@ -235,11 +229,4 @@ export const clearAllSessionData = (): void => {
       console.warn('Error clearing session data:', error);
     }
   }
-};
-
-/** Storage availability info for debugging. */
-export const getStorageInfo = (): { backend: Backend | null; userSessions: number } => {
-  const backend = resolveBackend();
-  const raw = backend ? storeFor(backend).getItem(STORAGE_KEY) : null;
-  return { backend, userSessions: raw ? Object.keys(parseSessions(raw)).length : 0 };
 };
