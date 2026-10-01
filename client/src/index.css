@@ -13,6 +13,30 @@
   --shadow-card: 0 1px 2px rgb(var(--c-mocha-800) / 0.06), 0 4px 16px rgb(var(--c-mocha-800) / 0.08);
   --shadow-button: 0 1px 2px rgb(var(--c-mocha-800) / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.15);
 
+  --animate-vote-lock: vote-lock 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+  --animate-badge-pop: badge-pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+  --animate-rise-in: rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-grow-x: grow-x 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  /* End states are intentionally implicit (no 100% keyframe): each animation
+     eases toward the element's underlying styles, so `both` fill holds the
+     exact class-driven resting look instead of fighting utilities like
+     scale-105 or :active scale. */
+  @keyframes vote-lock {
+    0% { scale: 0.9; }
+    60% { scale: 1.09; }
+  }
+  @keyframes badge-pop {
+    0% { opacity: 0; scale: 0.6; }
+    70% { scale: 1.08; }
+  }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(10px); }
+  }
+  @keyframes grow-x {
+    from { transform: scaleX(0); }
+  }
+
   --color-mocha-50: rgb(var(--c-mocha-50));
   --color-mocha-100: rgb(var(--c-mocha-100));
   --color-mocha-200: rgb(var(--c-mocha-200));
@@ -125,6 +149,7 @@ a:focus-visible {
   ::before,
   ::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
@@ -155,8 +180,8 @@ a:focus-visible {
 
   /* ---------- Buttons ---------- */
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 font-semibold rounded-lg
-      transition-colors duration-150 select-none
+    @apply inline-flex items-center justify-center gap-1.5 font-semibold rounded-lg shadow-xs
+      transition-all duration-150 active:scale-[0.97] select-none
       focus:outline-none focus-visible:ring-2 focus-visible:ring-ember-400 focus-visible:ring-offset-1
       disabled:opacity-50 disabled:cursor-not-allowed;
   }
@@ -177,9 +202,10 @@ a:focus-visible {
       hover:from-clay-600 hover:to-clay-700 active:from-clay-700 active:to-clay-800
       shadow-button;
   }
-  /* Quiet: translucent cream surface for low-emphasis controls */
+  /* Quiet: raised white surface — edge + shadow distinguish it from the flat
+     static containers (share-link box, panels) that share the cream palette. */
   .btn-quiet {
-    @apply text-mocha-700 bg-white/60 border border-cream-300
+    @apply text-mocha-700 bg-white/80 border border-cream-400
       hover:bg-cream-100 hover:border-cream-400 active:bg-cream-200;
   }
 
@@ -220,4 +246,93 @@ a:focus-visible {
   .panel-clay {
     @apply panel bg-clay-50/90 border-clay-200;
   }
+
+  /* ---------- Application chrome ----------
+     Semantic hooks so the Clean Mode palettes can repaint the shell below.
+     Playful mode keeps its exact current look: every value matches the
+     utilities these classes replaced. */
+  .app-header {
+    @apply bg-mocha-800/90 backdrop-blur-md text-cream-50 border-b border-ember-700/40 shadow-card;
+  }
+
+  .header-link {
+    @apply text-cream-100 hover:text-ember-300 transition-colors;
+  }
+
+  .theme-toggle {
+    @apply bg-mocha-900/50;
+  }
+}
+/* ---------- Clean Mode ----------
+   The clean palettes (themes.json: "clean" / "clean-dark") keep every --c-*
+   token in its semantic slot (surface/ink/accent), so most utilities repurpose
+   themselves via the variables. The overrides below exist for the few spots
+   where a token serves two roles (e.g. cream-100 is both a surface color and
+   the header's link ink) or where fixed values must invert with the mode. */
+
+[data-theme='clean'] {
+  color-scheme: light;
+}
+
+[data-theme='clean'] body {
+  @apply bg-cream-50;
+}
+
+[data-theme='clean'] .app-shell {
+  @apply bg-cream-50;
+}
+
+[data-theme='clean-dark'] {
+  --shadow-card-lg: 0 2px 4px rgb(1 4 8 / 0.55), 0 10px 32px rgb(1 4 8 / 0.5);
+  --shadow-card: 0 1px 2px rgb(1 4 8 / 0.45), 0 4px 16px rgb(1 4 8 / 0.45);
+  --shadow-button: 0 1px 2px rgb(1 4 8 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  color-scheme: dark;
+}
+
+[data-theme='clean-dark'] body {
+  @apply bg-cream-25;
+}
+
+[data-theme='clean-dark'] .app-shell {
+  @apply bg-cream-25;
+}
+
+[data-theme='clean-dark'] .app-header {
+  @apply bg-cream-100/90 border-cream-200;
+}
+
+[data-theme='clean-dark'] .header-link {
+  color: rgb(var(--c-cream-50));
+}
+
+[data-theme='clean-dark'] .theme-toggle button[aria-pressed='false'] {
+  color: rgb(var(--c-cream-50));
+}
+
+[data-theme='clean-dark'] .theme-toggle {
+  background-color: rgb(255 255 255 / 0.08);
+}
+
+[data-theme='clean-dark'] .app-overlay {
+  background-color: rgb(1 5 10 / 0.6);
+}
+
+[data-theme='clean-dark'] .avatar-muted {
+  background-image: linear-gradient(rgb(37 99 235), rgb(29 78 216));
+}
+
+[data-theme='clean-dark'] .honey-chip {
+  color: rgb(48 34 5);
+}
+
+[data-theme='clean-dark'] .btn-danger {
+  background-image: linear-gradient(rgb(191 29 29), rgb(159 24 28));
+}
+
+[data-theme='clean-dark'] .btn-quiet {
+  @apply bg-white/5 border-cream-200 shadow-none hover:bg-white/10 hover:border-cream-300 active:bg-white/15;
+}
+
+[data-theme='clean-dark'] .input-field {
+  @apply bg-white/5;
 }

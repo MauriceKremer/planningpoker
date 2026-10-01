@@ -1,6 +1,7 @@
 import { memo, useState, type KeyboardEvent } from 'react';
 import type { User, ActiveVoteOutState } from '../protocol/events';
 import type { SessionUser } from '../protocol/session';
+import Avatar from './Avatar';
 
 interface UserListProps {
   users: Record<string, User>;
@@ -11,6 +12,7 @@ interface UserListProps {
   onRemoveParticipant?: (userId: string) => void;
   isVotingOpen?: boolean;
   onUpdateUserName?: (newName: string) => void;
+  onCustomizeAvatar?: () => void;
   activeVoteOut?: ActiveVoteOutState | null;
   onStartVoteOut?: (userId: string) => void;
 }
@@ -24,6 +26,7 @@ const UserList = memo(({
   onRemoveParticipant,
   isVotingOpen,
   onUpdateUserName,
+  onCustomizeAvatar,
   activeVoteOut,
   onStartVoteOut,
 }: UserListProps) => {
@@ -71,34 +74,35 @@ const UserList = memo(({
   return (
     <div className="space-y-1">
       {usersList.map((user) => {
+        const countdown = user.countdownSeconds ?? 0;
         // While the round is open the client only knows WHO has voted
         // (`votedUserIds`, ids from the server) — card values are hidden.
-        const countdown = user.countdownSeconds ?? 0;
         const hasVoted = isVotingOpen && !votingComplete
           ? (votedUserIds ?? []).includes(user.id)
           : false;
         const vote = votingComplete ? votes[user.id] : undefined;
+        const ring = hasVoted
+          ? 'voted'
+          : isVotingOpen && !votingComplete ? 'waiting' : null;
 
         return (
           <div
             key={user.id}
             data-testid={`user-${user.name}`}
-            className={`flex items-center justify-between px-2 py-1.5 rounded-lg border transition-colors ${
+            className={`flex items-center justify-between px-1.5 py-1 rounded-lg border transition-colors ${
               currentUser?.id === user.id
                 ? 'bg-ember-50/80 border-ember-200'
                 : 'bg-cream-100/70 border-transparent'
             }`}
           >
             <div className="flex items-center space-x-2">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-                user.isModerator
-                  ? 'bg-linear-to-b/srgb from-honey-400 to-honey-500 shadow-button'
-                  : 'bg-linear-to-b/srgb from-mocha-500 to-mocha-700'
-              }`}>
-                <span className="text-white text-xs font-bold leading-none">
-                  {user.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
+              <Avatar
+                id={user.id}
+                name={user.name}
+                avatar={user.avatar}
+                ring={ring}
+                onClick={currentUser?.id === user.id ? onCustomizeAvatar : undefined}
+              />
               <div>
                 <div className="flex items-center space-x-2">
                   {editingUserId === user.id ? (
@@ -168,11 +172,11 @@ const UserList = memo(({
 
             <div className="flex items-center space-x-2">
               {votingComplete && vote !== undefined ? (
-                <span className="badge badge-ember font-semibold">
+                <span className="badge badge-ember font-semibold animate-badge-pop">
                   {vote}
                 </span>
               ) : hasVoted ? (
-                <span className="badge badge-sage">
+                <span className="badge badge-sage animate-badge-pop">
                   ✓ Voted
                 </span>
               ) : isVotingOpen && !votingComplete ? (
@@ -209,7 +213,7 @@ const UserList = memo(({
       })}
 
       {usersList.length === 0 && (
-        <p className="text-mocha-400 text-center py-3 text-sm">No participants yet</p>
+        <p className="text-mocha-400 text-center py-2 text-sm">No participants yet</p>
       )}
     </div>
   );

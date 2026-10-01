@@ -30,10 +30,16 @@ test.describe('Visual matrix — public pages', () => {
 });
 
 test.describe('Visual matrix — session view', () => {
+  // Fixture avatars must be deterministic: default colors derive from a
+  // random UUID, which would make every capture differ.
+  const FIXTURE_AVATARS = {
+    moderator: { color: 'teal', glyph: '🦊' },
+    peer: { color: 'sky', glyph: '🐋' },
+  };
   for (const theme of themes) {
     test(`${theme.id} session`, async ({ page }) => {
-      const { sessionId, userId, moderatorName } = await createSessionViaApi('Visual Host');
-      await joinSessionViaApi(sessionId, 'Visual Peer');
+      const { sessionId, userId, moderatorName } = await createSessionViaApi('Visual Host', FIXTURE_AVATARS.moderator);
+      await joinSessionViaApi(sessionId, 'Visual Peer', FIXTURE_AVATARS.peer);
       await seedSessionMembership(page, sessionId, userId, moderatorName);
       await page.goto(`/session/${sessionId}?theme=${theme.id}`);
       await expect(page.getByRole('heading', { name: 'Participants' })).toBeVisible();

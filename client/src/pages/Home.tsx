@@ -4,6 +4,7 @@ import { createSession } from '../utils/api';
 import { getRandomTitleSuggestion } from '../utils/titleGenerator';
 import { saveUserSession } from '../utils/sessionStorage';
 import { getCardSetPreference } from '../utils/cardSetStorage';
+import { getAvatarPreferences } from '../utils/avatarPreferences';
 import SEO from '../components/SEO';
 
 const Home = () => {
@@ -21,7 +22,7 @@ const Home = () => {
     setIsLoading(true);
 
     try {
-      const response = await createSession(moderatorName, sessionTitle, getCardSetPreference()?.cardSet);
+      const response = await createSession(moderatorName, sessionTitle, getCardSetPreference()?.cardSet, getAvatarPreferences() ?? undefined);
 
       const users = response.session.users;
       const moderatorId = response.userId || response.session.moderatorId;

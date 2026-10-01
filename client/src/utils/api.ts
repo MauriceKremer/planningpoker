@@ -1,6 +1,11 @@
+import type { Avatar } from '../protocol/events';
 import type { SessionState, SessionUser } from '../protocol/session';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
+// Same-origin by design: nginx proxies /api and CSP pins connect-src to
+// 'self', so an absolute cross-origin base gets blocked outright. Only dev
+// (vite on :3000) talks to the server port directly.
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  || (import.meta.env.DEV ? 'http://localhost:8081/api' : '/api');
 
 /** Server response for `POST /sessions/create`. */
 export interface CreateSessionResponse {
@@ -128,17 +133,27 @@ export const createSession = async (
   moderatorName: string,
   title: string,
   cardSet?: string[],
+  avatar?: Avatar,
 ): Promise<CreateSessionResponse> => {
   return request<CreateSessionResponse>('/sessions/create', {
     method: 'POST',
-    body: JSON.stringify({ moderatorName, title, ...(cardSet ? { cardSet } : {}) }),
+    body: JSON.stringify({
+      moderatorName,
+      title,
+      ...(cardSet ? { cardSet } : {}),
+      ...(avatar ? { avatar } : {}),
+    }),
   });
 };
 
-export const joinSession = async (sessionId: string, userName: string): Promise<JoinSessionResponse> => {
+export const joinSession = async (
+  sessionId: string,
+  userName: string,
+  avatar?: Avatar,
+): Promise<JoinSessionResponse> => {
   return request<JoinSessionResponse>(`/sessions/${sessionId}/join`, {
     method: 'POST',
-    body: JSON.stringify({ userName }),
+    body: JSON.stringify({ userName, ...(avatar ? { avatar } : {}) }),
   });
 };
 

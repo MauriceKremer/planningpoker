@@ -80,6 +80,9 @@ describe('socket contract parity (server ↔ client)', () => {
          'user-name-updated': {
             userId: 'U1', oldName: 'A', newName: 'B', user: { id: 'U1', name: 'B', isModerator: false, isOnline: true },
          },
+         'user-avatar-updated': {
+            userId: 'U1', user: { id: 'U1', name: 'A', isModerator: false, isOnline: true, avatar: { color: 'moss', glyph: '🦊' } },
+         },
          'moderator-changed': { newModeratorId: 'U2', previousModeratorId: 'U1' },
          'participant-removed': { userId: 'U2' },
          'participant-auto-removed': { userId: 'U2' },

@@ -18,13 +18,15 @@ async function apiFetch(path, options, tries = 4) {
 
 /**
  * Create a session directly through the API (fast path for setup).
+ * An optional moderator avatar is the fast path to visually-deterministic
+ * fixture users (avatar colors otherwise derive from a random UUID).
  * Returns { sessionId, userId, moderatorName }.
  */
-export async function createSessionViaApi(moderatorName) {
+export async function createSessionViaApi(moderatorName, avatar = null) {
   const data = await apiFetch('/sessions/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: BASE },
-    body: JSON.stringify({ moderatorName }),
+    body: JSON.stringify({ moderatorName, ...(avatar ? { avatar } : {}) }),
   });
   return { sessionId: data.sessionId, userId: data.userId, moderatorName };
 }
@@ -32,11 +34,11 @@ export async function createSessionViaApi(moderatorName) {
 /**
  * Join a session directly through the API. Returns the response (user, …).
  */
-export async function joinSessionViaApi(sessionId, userName) {
+export async function joinSessionViaApi(sessionId, userName, avatar = null) {
   return apiFetch(`/sessions/${sessionId}/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: BASE },
-    body: JSON.stringify({ userName }),
+    body: JSON.stringify({ userName, ...(avatar ? { avatar } : {}) }),
   });
 }
 

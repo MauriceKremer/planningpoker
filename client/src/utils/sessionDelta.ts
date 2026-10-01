@@ -134,6 +134,9 @@ const applyEventInput = (prev: SessionState, input: EventInput): SessionState =>
           : prev.moderator,
       };
 
+    case 'user-avatar-updated':
+      return { ...prev, users: { ...prev.users, [data.userId]: data.user } };
+
     case 'moderator-changed': {
       const users = { ...prev.users };
       if (data.newModerator) users[data.newModeratorId] = data.newModerator;

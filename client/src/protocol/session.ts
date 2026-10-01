@@ -7,7 +7,7 @@
  * and the initial `session-joined` load may carry any of them. `votes` is the
  * canonical map the reducer mutates incrementally.
  */
-import type { ActiveVoteOutState, User } from './events';
+import type { ActiveVoteOutState, Avatar, User } from './events';
 
 export interface SessionState {
   id: string;
@@ -38,6 +38,7 @@ export interface SessionUser {
    name: string;
    isModerator?: boolean;
    joinedAt?: string;
+   avatar?: Avatar;
     [key: string]: unknown;
 }
 

@@ -13,6 +13,20 @@ const { setupSocketEvents, cleanupInactiveSessions } = require('./services/socke
 const PORT = process.env.PORT || 8081;
 const SWEEP_INTERVAL_MS = 60 * 1000;
 
+// CLIENT_URL carries a comma-separated origin whitelist: the app is served
+// from the production domain and from the local verify port (:4080), so both
+// belong here by default. Comma-separated (not space/whitespace) keeps an
+// invalid value like "https://x, https://y" fail-safely strict.
+if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
+  console.error('FATAL: CLIENT_URL must be set in production');
+  process.exit(1);
+}
+const CLIENT_URLS = (process.env.CLIENT_URL || 'http://localhost:3000')
+  .split(',').map(origin => origin.trim()).filter(Boolean);
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? CLIENT_URLS
+  : [...CLIENT_URLS, 'http://localhost:3001'];
+
 const app = express();
 const server = http.createServer(app);
 
@@ -21,7 +35,7 @@ app.set('trust proxy', 1);
 
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -33,16 +47,6 @@ const io = socketIo(server, {
   path: '/socket.io/',
   serveClient: false,
 });
-
-// Validate CLIENT_URL is set in production
-if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
-  console.error('FATAL: CLIENT_URL must be set in production');
-  process.exit(1);
-}
-
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.CLIENT_URL]
-  : [process.env.CLIENT_URL || 'http://localhost:3000', 'http://localhost:3001'];
 
 // Security middleware.
 // CSP: strict, API-appropriate policy. WebSockets are unaffected (CSP does not

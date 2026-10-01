@@ -9,9 +9,12 @@ import {
 import useSessionSocket from '../hooks/useSessionSocket';
 import { stopHeartbeat } from '../utils/socket';
 import { applyEvent } from '../utils/sessionDelta';
+import { saveAvatarPreferences } from '../utils/avatarPreferences';
 import type { SessionState, SessionUser, Updater } from '../protocol/session';
+import type { Avatar } from '../protocol/events';
 import VotingCards from '../components/VotingCards';
 import UserList from '../components/UserList';
+import AvatarPicker from '../components/AvatarPicker';
 import Results from '../components/Results';
 import ModeratorControls from '../components/ModeratorControls';
 import UsernamePrompt from '../components/UsernamePrompt';
@@ -52,6 +55,7 @@ const Session = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUsernamePrompt, setShowUsernamePrompt] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
   // Stable updaters for the socket hook
@@ -237,6 +241,12 @@ const Session = () => {
 
   const handleUpdateUserName = useCallback((newName: string) => emitAsUser('update-user-name', { newName }), [emitAsUser]);
 
+  const handleSaveAvatar = useCallback((avatar: Avatar) => {
+    saveAvatarPreferences(avatar);
+    emitAsUser('update-user-avatar', { avatar });
+  }, [emitAsUser]);
+  const closeAvatarPicker = useCallback(() => setShowAvatarPicker(false), []);
+
   const handleStartVoteOut = useCallback((targetUserId: string) => emitAsUser('start-vote-out', { targetUserId }), [emitAsUser]);
 
   const handleCancelVoteOut = useCallback(() => emitAsUser('cancel-vote-out'), [emitAsUser]);
@@ -317,7 +327,7 @@ const Session = () => {
           <div className="max-w-4xl mx-auto space-y-4">
             <div className="card p-4">
               <div className="flex justify-between items-start mb-2.5">
-                <div><h1 className="text-lg font-bold text-mocha-800">{session.title}</h1></div>
+                <h1 className="text-lg font-bold text-mocha-800">{session.title}</h1>
                 <div className="flex items-center gap-2.5">
                   <div className="text-xs text-mocha-500">
                     Moderator: <span className="font-medium text-mocha-700">{session.moderator}</span>
@@ -326,17 +336,15 @@ const Session = () => {
                   <button onClick={handleLeaveSession} className="btn btn-quiet text-xs text-clay-600 border-clay-200 hover:bg-clay-50 hover:border-clay-300 px-2.5 py-1 min-h-[44px]" title="Leave this session">Leave Session</button>
                 </div>
               </div>
-              <div className="mt-1.5">
-                <div className="flex items-center space-x-2.5 text-xs">
-                  <span className="text-mocha-400 font-mono">ID: {sessionId}</span>
-                  <span className="text-mocha-500">Share link:</span>
-                  <div className="bg-cream-100/80 px-2 py-1 rounded-md border border-cream-300 flex-1 min-w-0">
-                    <code className="text-xs text-mocha-600 truncate block">{`${window.location.origin}/session/${sessionId}`}</code>
-                  </div>
-                  <button onClick={handleCopyLink} className={`btn btn-quiet px-2 py-1 text-xs min-h-[44px] ${copySuccess ? '!bg-sage-100 !border-sage-300 !text-sage-700' : 'text-ember-700 hover:bg-ember-50 hover:border-ember-300'}`} title="Copy link to clipboard">
-                    {copySuccess ? <span>✓ Copied!</span> : <span>📋 Copy</span>}
-                  </button>
+              <div className="mt-1.5 flex items-center space-x-2.5 text-xs">
+                <span className="text-mocha-400 font-mono">ID: {sessionId}</span>
+                <span className="text-mocha-500">Share link:</span>
+                <div className="bg-cream-100/80 px-2 py-1 rounded-md border border-cream-300 flex-1 min-w-0">
+                  <code className="text-xs text-mocha-600 truncate block">{`${window.location.origin}/session/${sessionId}`}</code>
                 </div>
+                <button onClick={handleCopyLink} className={`btn btn-quiet px-2 py-1 text-xs min-h-[44px] ${copySuccess ? '!bg-sage-100 !border-sage-300 !text-sage-700' : 'text-ember-700 hover:bg-ember-50 hover:border-ember-300'}`} title="Copy link to clipboard">
+                  {copySuccess ? <span>✓ Copied!</span> : <span>📋 Copy</span>}
+                </button>
               </div>
             </div>
 
@@ -363,12 +371,12 @@ const Session = () => {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="card p-4">
                 <h3 className="text-sm font-semibold text-mocha-800 mb-2.5">Participants</h3>
-                <UserList users={session.users} votes={session.votes} votedUserIds={session.votedUserIds || []} votingComplete={session.votingComplete} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onRemoveParticipant={handleRemoveParticipant} onUpdateUserName={handleUpdateUserName} activeVoteOut={session.activeVoteOut} onStartVoteOut={handleStartVoteOut} />
+                <UserList users={session.users} votes={session.votes} votedUserIds={session.votedUserIds || []} votingComplete={session.votingComplete} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onRemoveParticipant={handleRemoveParticipant} onUpdateUserName={handleUpdateUserName} onCustomizeAvatar={() => setShowAvatarPicker(true)} activeVoteOut={session.activeVoteOut} onStartVoteOut={handleStartVoteOut} />
               </div>
               <div aria-live="polite">
                 {session.votingComplete ? (
-                  <div className="card p-5">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="card p-4 animate-rise-in">
+                    <div className="flex items-center justify-between mb-2.5">
                       <h3 className="text-base font-semibold text-mocha-800">Voting Results</h3>
                       {currentUser?.isModerator && (
                         <button onClick={handleResetVotes} className="btn btn-primary px-3 py-1.5 text-xs min-h-[44px]">
@@ -382,8 +390,8 @@ const Session = () => {
                 ) : session.isVotingOpen ? (
                   <VotingCards cardSet={session.cardSet ?? []} onVote={handleVote} currentUserVote={currentUser ? session.votes[currentUser.id] : null} isVotingOpen={session.isVotingOpen} currentUser={currentUser} onStopRound={handleStopRound} />
                 ) : (
-                  <div className="card p-5">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="card p-4">
+                    <div className="flex items-center justify-between mb-2.5">
                       <h3 className="text-base font-semibold text-mocha-800">Waiting for Voting to Start</h3>
                       {currentUser?.isModerator && (
                         <button onClick={handleStartVoting} className="btn btn-primary px-3 py-1.5 text-xs min-h-[44px]">
@@ -400,6 +408,10 @@ const Session = () => {
           </div>
         </div>
       </div>
+      {currentUser && showAvatarPicker && (
+        <AvatarPicker user={currentUser} onClose={closeAvatarPicker}
+          onSave={(avatar) => { closeAvatarPicker(); handleSaveAvatar(avatar); }} />
+      )}
     </>
   );
 };

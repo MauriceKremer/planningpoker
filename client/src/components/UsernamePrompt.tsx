@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { joinSession, joinErrorToMessage } from '../utils/api';
+import { getAvatarPreferences } from '../utils/avatarPreferences';
 import type { SessionUser } from '../protocol/session';
 
 interface UsernamePromptProps {
@@ -19,7 +20,7 @@ const UsernamePrompt = ({ sessionId, onJoinSuccess, sessionTitle }: UsernameProm
     setError('');
 
     try {
-      const response = await joinSession(sessionId, userName);
+      const response = await joinSession(sessionId, userName, getAvatarPreferences() ?? undefined);
       // The server returns the created user explicitly — identity by id,
       // never by name matching (names are display strings).
       onJoinSuccess(response.user);

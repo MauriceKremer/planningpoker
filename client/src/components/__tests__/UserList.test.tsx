@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import UserList from '../UserList';
@@ -69,5 +70,27 @@ describe('UserList', () => {
     const buttons = screen.getAllByTitle(/Start vote to remove participant/i);
     fireEvent.click(buttons[0]);
     expect(onStartVoteOut).toHaveBeenCalledWith('u-2');
+  });
+
+  test('only the current user\u2019s avatar opens the avatar customizer', async () => {
+    const onCustomizeAvatar = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <UserList
+        users={baseUsers}
+        votes={{}}
+        votingComplete={false}
+        currentUser={baseUsers['u-1']}
+        onStartVoteOut={vi.fn()}
+        onCustomizeAvatar={onCustomizeAvatar}
+      />
+    );
+
+    const ownAvatar = screen.getByRole('button', { name: 'Customize your avatar' });
+    await user.click(ownAvatar);
+    expect(onCustomizeAvatar).toHaveBeenCalledTimes(1);
+
+    // Other participants get a non-interactive avatar — exactly one button.
+    expect(screen.getAllByTitle('Customize your avatar')).toHaveLength(1);
   });
 });

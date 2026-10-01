@@ -31,6 +31,7 @@ const sessionIdParam = param('sessionId')
 const JOIN_ERROR_RESPONSES = {
   'Username already exists in this session': { status: 409, message: 'Username already taken' },
   'Session not found': { status: 404, message: 'Session not found' },
+  'Invalid avatar': { status: 400, message: 'Invalid avatar' },
 };
 
 // NOTE: no HTML escaping of user input — React escapes on render; escaping
@@ -55,16 +56,22 @@ router.post('/create', [
     .trim()
     .isLength({ min: 1, max: 16 })
     .withMessage('Card values must be 1-16 characters'),
+  body('avatar')
+    .optional()
+    .isObject()
+    .withMessage('Avatar must be an object'),
   validationMiddleware
 ], async (req, res) => {
   try {
-    const { moderatorName, title, cardSet } = req.body;
+    const { moderatorName, title, cardSet, avatar } = req.body;
 
-    const session = await createSession(moderatorName || 'Anonymous', title, cardSet);
+    const session = await createSession(moderatorName || 'Anonymous', title, cardSet, avatar ?? null);
 
     res.json({ sessionId: session.id, userId: session.moderatorId, session });
   } catch (error) {
     logger.error('Error creating session:', error);
+    const mapped = JOIN_ERROR_RESPONSES[error.message];
+    if (mapped) return res.status(mapped.status).json({ message: mapped.message });
     res.status(500).json({ error: 'Failed to create session' });
   }
 });
@@ -75,14 +82,18 @@ router.post('/:sessionId/join', [
     .trim()
     .isLength({ min: 1, max: 30 })
     .withMessage('Username must be 1-30 characters'),
+  body('avatar')
+    .optional()
+    .isObject()
+    .withMessage('Avatar must be an object'),
   validationMiddleware
 ], async (req, res) => {
   try {
-    const { userName } = req.body;
+    const { userName, avatar } = req.body;
 
-    const { session, user } = await joinSession(req.params.sessionId, userName);
     // The created user is returned explicitly — the client saves identity by
     // id, never by name matching.
+    const { session, user } = await joinSession(req.params.sessionId, userName, avatar ?? null);
     res.json({ session, userId: user.id, user });
   } catch (error) {
     logger.error('Error joining session:', error);

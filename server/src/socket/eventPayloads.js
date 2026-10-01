@@ -108,6 +108,11 @@ const userNameUpdated = (session, userId, oldName, newName) => {
   };
 };
 
+const userAvatarUpdated = (session, userId) => ({
+  userId,
+  user: session.users[userId],
+});
+
 const participantRemoved = (targetUserId, removedUser, removedByName) => ({
   userId: targetUserId,
   user: removedUser,
@@ -167,6 +172,7 @@ module.exports = {
   cardSetUpdated: build('card-set-updated', cardSetUpdated),
   moderatorChanged: build('moderator-changed', moderatorChanged),
   userNameUpdated: build('user-name-updated', userNameUpdated),
+  userAvatarUpdated: build('user-avatar-updated', userAvatarUpdated),
   participantRemoved: build('participant-removed', participantRemoved),
   voteOutStarted: build('vote-out-started', voteOutStarted),
   voteOutCast: build('vote-out-cast', voteOutCast),

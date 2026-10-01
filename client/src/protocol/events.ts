@@ -23,6 +23,29 @@ import { z } from 'zod';
 export const cardSetItem = z.string();
 
 /**
+ * Curated avatar palette keys — the only background colors the server accepts
+ * for a participant avatar. Every entry is hand-picked to keep white text/emoji
+ * inside the circle at ≥ 4.5:1 (the hex map lives in `utils/avatars.ts`).
+ * The server mirrors this exact list; parity is build-enforced.
+ */
+export const AVATAR_COLORS = [
+  'rose', 'coral', 'amber', 'moss', 'teal', 'sky', 'indigo', 'violet', 'berry', 'slate',
+] as const;
+
+export const avatarColorSchema = z.enum(AVATAR_COLORS);
+
+/**
+ * A participant avatar: a curated background color plus an optional emoji
+ * glyph. A missing/absent glyph falls back to the user's initials — `type` is
+ * therefore derivable and not part of the wire format.
+ */
+export const avatarSchema = z.object({
+  color: avatarColorSchema,
+  glyph: z.string().regex(/^[^<>]{1,16}$/u).optional(),
+});
+export type Avatar = z.infer<typeof avatarSchema>;
+
+/**
  * A participant, as carried in any delta. The server may omit optional
  * bookkeeping fields on the fields it doesn't touch; everything optional so a
  * partial user object (e.g. a moderator swap) still validates.
@@ -36,6 +59,7 @@ export const userSchema = z.object({
   lastSeen: z.string().optional(),
   connectedAt: z.string().optional(),
   countdownSeconds: z.number().optional(),
+  avatar: avatarSchema.optional(),
 });
 export type User = z.infer<typeof userSchema>;
 
@@ -150,6 +174,11 @@ export const userNameUpdatedSchema = z.object({
   moderatorName: z.string().optional(),
 });
 
+export const userAvatarUpdatedSchema = z.object({
+  userId: z.string(),
+  user: userSchema,
+});
+
 export const moderatorChangedSchema = z.object({
   newModeratorId: z.string(),
   newModeratorName: z.string().nullable().optional(),
@@ -219,6 +248,7 @@ export const eventSchemas = {
   'user-disconnected': userDisconnectedSchema,
   'user-countdown': userCountdownSchema,
   'user-name-updated': userNameUpdatedSchema,
+  'user-avatar-updated': userAvatarUpdatedSchema,
   'moderator-changed': moderatorChangedSchema,
   'participant-removed': participantRemovedSchema,
   'participant-auto-removed': participantRemovedSchema,

@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:8081';
+// Same-origin by design: nginx proxies /socket.io (polling + websocket
+// upgrade) and CSP pins connect-src to 'self'. Only dev targets the server
+// port directly.
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
+  || (import.meta.env.DEV ? 'http://localhost:8081' : '');
 const HEARTBEAT_INTERVAL_MS = 30_000; // throttled server-side: persisted every 60s
 
 /**

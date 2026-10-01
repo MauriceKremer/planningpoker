@@ -15,7 +15,7 @@ const GitHubIcon = ({ label, href, children }: {
     rel="noopener noreferrer"
     title={label}
     aria-label={label}
-    className="text-cream-100 hover:text-ember-300 transition-colors"
+    className="header-link"
   >
     <svg
       width="20"

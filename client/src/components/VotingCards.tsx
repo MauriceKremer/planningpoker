@@ -18,8 +18,8 @@ interface VotingCardsProps {
 
 const VotingCards = memo(({ cardSet, onVote, currentUserVote, isVotingOpen, currentUser, onStopRound }: VotingCardsProps) => {
   return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between mb-3">
+    <div className="card p-4">
+      <div className="flex items-center justify-between mb-2.5">
         <h3 className="text-base font-semibold text-mocha-800">
           {isVotingOpen ? 'Select Your Estimate' : 'Voting Closed'}
         </h3>
@@ -35,28 +35,30 @@ const VotingCards = memo(({ cardSet, onVote, currentUserVote, isVotingOpen, curr
       </div>
 
       {currentUserVote && (
-        <div className="mb-3 px-3 py-1.5 panel-sage text-sage-700 text-sm">
+        <div className="mb-2.5 px-3 py-1.5 panel-sage text-sage-700 text-sm animate-rise-in">
           <p>You voted: <span className="font-bold">{currentUserVote}</span></p>
         </div>
       )}
 
-      <div className="mb-3.5">
+      <div className="mb-3">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-mocha-400 mb-1.5">Story Points</h4>
-        <div className="grid grid-cols-4 gap-2.5">
-          {cardSet.map((value) => {
+        <div className="grid grid-cols-4 gap-2">
+          {cardSet.map((value, i) => {
             const isSelected = currentUserVote === value;
             return (
               <button
                 key={value}
                 onClick={() => onVote(value)}
                 disabled={!isVotingOpen}
+                style={{ animationDelay: `${i * 30}ms` }}
                 className={`
                   aspect-square border-2 rounded-lg transition-all
                   flex items-center justify-center text-lg font-bold
                   disabled:opacity-50 disabled:cursor-not-allowed
+                  active:scale-95
                   ${isSelected
-                    ? 'bg-linear-to-b/srgb from-ember-500 to-ember-600 border-ember-600 text-white shadow-button transform scale-105'
-                    : 'bg-cream-100/90 border-cream-400 text-mocha-700 hover:bg-ember-50 hover:border-ember-300 hover:text-ember-700'
+                    ? 'bg-linear-to-b/srgb from-ember-500 to-ember-600 border-ember-600 text-white shadow-button scale-105 animate-vote-lock'
+                    : 'bg-cream-100/90 border-cream-400 text-mocha-700 hover:bg-ember-50 hover:border-ember-300 hover:text-ember-700 enabled:hover:-translate-y-0.5 animate-rise-in'
                   }
                   ${!isVotingOpen && isSelected ? 'ring-2 ring-ember-300' : ''}
                 `}
@@ -70,8 +72,8 @@ const VotingCards = memo(({ cardSet, onVote, currentUserVote, isVotingOpen, curr
 
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wide text-mocha-400 mb-1.5">Other Options</h4>
-        <div className="grid grid-cols-2 gap-2.5">
-          {SPECIAL_OPTIONS.map((option) => {
+        <div className="grid grid-cols-2 gap-2">
+          {SPECIAL_OPTIONS.map((option, i) => {
             const isSelected = currentUserVote === option.value;
             return (
               <button
@@ -79,13 +81,15 @@ const VotingCards = memo(({ cardSet, onVote, currentUserVote, isVotingOpen, curr
                 onClick={() => onVote(option.value)}
                 disabled={!isVotingOpen}
                 title={option.description}
+                style={{ animationDelay: `${(cardSet.length + i) * 30}ms` }}
                 className={`
                   h-14 border-2 rounded-lg transition-all
                   flex flex-col items-center justify-center
                   disabled:opacity-50 disabled:cursor-not-allowed
+                  active:scale-95
                   ${isSelected
-                    ? 'bg-linear-to-b/srgb from-caramel-400 to-caramel-600 border-caramel-600 text-white shadow-button transform scale-105'
-                    : 'bg-caramel-50/80 border-caramel-200 text-caramel-800 hover:bg-caramel-100 hover:border-caramel-300'
+                    ? 'bg-linear-to-b/srgb from-caramel-400 to-caramel-600 border-caramel-600 text-white shadow-button scale-105 animate-vote-lock'
+                    : 'bg-caramel-50/80 border-caramel-200 text-caramel-800 hover:bg-caramel-100 hover:border-caramel-300 enabled:hover:-translate-y-0.5 animate-rise-in'
                   }
                   ${!isVotingOpen && isSelected ? 'ring-2 ring-caramel-300' : ''}
                 `}

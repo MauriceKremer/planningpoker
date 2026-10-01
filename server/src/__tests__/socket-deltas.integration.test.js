@@ -233,4 +233,47 @@ describe('socket delta payloads (end-to-end)', () => {
     const err = await errP;
     expect(err.message).toMatch(/Too many requests/);
   }, 20000);
+
+  test('update-user-avatar stores + broadcasts the avatar delta', async () => {
+    const bobP = waitFor(bob, 'user-avatar-updated');
+    const modP = waitFor(mod, 'user-avatar-updated');
+    mod.emit('update-user-avatar', { sessionId, userId: modId, avatar: { color: 'moss', glyph: '🦊' } });
+    const [data, modEcho] = await Promise.all([bobP, modP]);
+
+    expect(data).not.toHaveProperty('session');
+    for (const received of [data, modEcho]) {
+      expect(received.userId).toBe(modId);
+      expect(received.user.avatar).toEqual({ color: 'moss', glyph: '🦊' });
+    }
+    // The stored record carries it — future joins/disconnects rebroadcast it.
+    expect(sessionService.getSession(sessionId).users[modId].avatar)
+      .toEqual({ color: 'moss', glyph: '🦊' });
+  }, 15000);
+
+  test('update-user-avatar rejects off-palette colors and markup glyphs', async () => {
+    const errP = waitFor(mod, 'error');
+    mod.emit('update-user-avatar', { sessionId, userId: modId, avatar: { color: 'hotpink', glyph: '🦊' } });
+    const err = await errP;
+    expect(err.message).toBe('Invalid avatar');
+    expect(sessionService.getSession(sessionId).users[modId].avatar.color).toBe('moss');
+  }, 15000);
+
+  test('join-session seeds a returning user\'s saved avatar', async () => {
+    const modP = waitFor(mod, 'session-joined');
+    mod.emit('join-session', { sessionId, userId: modId, avatar: { color: 'sky', glyph: '🐋' } });
+    await modP;
+
+    expect(sessionService.getSession(sessionId).users[modId].avatar)
+      .toEqual({ color: 'sky', glyph: '🐋' });
+  }, 15000);
+
+  test('join-session ignores avatars and only errors on a bad one', async () => {
+    const modP = waitFor(mod, 'error');
+    mod.emit('join-session', { sessionId, userId: modId, avatar: { color: '<script>' } });
+    const err = await modP;
+    expect(err.message).toBe('Invalid avatar');
+    // The failed seed did not touch the stored avatar.
+    expect(sessionService.getSession(sessionId).users[modId].avatar)
+      .toEqual({ color: 'sky', glyph: '🐋' });
+  }, 15000);
 });

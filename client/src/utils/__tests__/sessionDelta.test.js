@@ -149,6 +149,17 @@ describe('sessionDelta.applyEvent', () => {
     expect(next.moderator).toBe('Alice');
   });
 
+  test('user-avatar-updated merges the avatar-bearing user record', () => {
+    const prev = baseSession();
+    const next = applyEvent(prev, 'user-avatar-updated', {
+      userId: 'u-2',
+      user: { id: 'u-2', name: 'Bob', isModerator: false, isOnline: true, avatar: { color: 'moss', glyph: '🦊' } },
+    });
+    expect(next.users['u-2'].avatar).toEqual({ color: 'moss', glyph: '🦊' });
+    expect(next.users['u-2'].name).toBe('Bob');
+    expect(next.users['u-1']).toBe(prev.users['u-1']);
+  });
+
   test('moderator-changed merges both user objects and the moderator id/name', () => {
     const next = applyEvent(baseSession(), 'moderator-changed', {
       newModeratorId: 'u-2', newModeratorName: 'Bob',

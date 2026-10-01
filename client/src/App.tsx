@@ -6,6 +6,7 @@ import JoinSession from './pages/JoinSession';
 import About from './pages/About';
 import SessionClosedPage from './pages/SessionClosedPage';
 import GitHubLinks from './components/GitHubLinks';
+import ThemeToggle from './components/ThemeToggle';
 import { useActiveTheme } from './theme/themes';
 
 /**
@@ -16,23 +17,24 @@ import { useActiveTheme } from './theme/themes';
  * shell must therefore stay free of `window`/`document` access at render time.
  */
 export function AppShell() {
-  const { backdropStyle } = useActiveTheme();
+  const { backdropStyle, mode, setMode } = useActiveTheme();
 
   return (
     <div
-      className="min-h-screen"
+      className="app-shell min-h-screen"
       style={backdropStyle}
     >
-      <header className="bg-mocha-800/90 backdrop-blur-md text-cream-50 py-3 border-b border-ember-700/40 shadow-card">
+      <header className="app-header py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
           <Link to="/" className="text-xl font-bold tracking-tight hover:text-ember-300 transition-colors">
             Planning Poker
           </Link>
           <div className="flex items-center space-x-4">
+            <ThemeToggle mode={mode} onModeChange={setMode} />
             <GitHubLinks />
             <Link
               to="/about"
-              className="text-cream-100 hover:text-ember-300 text-sm font-medium transition-colors"
+              className="header-link text-sm font-medium max-sm:hidden"
             >
               About this app
             </Link>

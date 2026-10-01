@@ -8,9 +8,9 @@ WORKDIR /app
 COPY --from=client package*.json ./
 RUN npm ci
 
-ARG VITE_API_URL
-ARG VITE_SOCKET_URL
-ENV VITE_API_URL=$VITE_API_URL VITE_SOCKET_URL=$VITE_SOCKET_URL
+# No API/socket env baking: the bundle uses same-origin relative endpoints by
+# default (CSP connect-src 'self' only allows same origin anyway). Dev uses
+# client/.env via dev-setup.sh.
 
 COPY --from=client . .
 RUN npm run build

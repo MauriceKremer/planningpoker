@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { joinSession, joinErrorToMessage } from '../utils/api';
 import { saveUserSession } from '../utils/sessionStorage';
+import { getAvatarPreferences } from '../utils/avatarPreferences';
 import SEO from '../components/SEO';
 
 const JoinSession = () => {
@@ -17,7 +18,7 @@ const JoinSession = () => {
     setError('');
 
     try {
-      const response = await joinSession(sessionId, userName);
+      const response = await joinSession(sessionId, userName, getAvatarPreferences() ?? undefined);
       saveUserSession(sessionId, {
         userId: response.userId || response.user.id,
         userName: response.user.name,

@@ -21,7 +21,7 @@ interface ModeratorControlsProps {
 
 const Modal = ({ titleId, title, onClose, children }: { titleId: string; title: string; onClose: () => void; children: ReactNode }) => (
   <div
-    className="fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50"
+    className="app-overlay fixed inset-0 bg-mocha-900/50 backdrop-blur-sm flex items-center justify-center z-50"
     role="dialog"
     aria-modal="true"
     aria-labelledby={titleId}

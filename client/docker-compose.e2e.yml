@@ -9,14 +9,8 @@ services:
       # Socket-level debug logs for the E2E run (server stays silent in prod).
       - DEBUG=true
   nginx:
-    build:
-      args:
-        # Bake localhost endpoints so the E2E bundle talks to the local stack.
-        - VITE_API_URL=http://localhost:4080/api
-        - VITE_SOCKET_URL=http://localhost:4080
-    # Distinct image tag: the E2E bake (localhost endpoints) must never
-    # overwrite the production :current image that deploy.sh's rollback
-    # mechanism reasons about.
+    # Distinct image tag: must never overwrite the production :current image
+    # that deploy.sh's rollback mechanism reasons about.
     image: planningpoker-nginx:e2e
     volumes:
       # E2E copy of the production nginx.conf with raised rate limits. The

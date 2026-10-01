@@ -57,7 +57,7 @@ const SessionClosed = ({ sessionTitle, moderatorName, userLeft = false }: Sessio
                 href="https://ko-fi.com/bytecoder"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-1.5 bg-honey-300 hover:bg-honey-400 text-mocha-800 px-3.5 py-1.5 rounded-lg font-medium transition-colors text-xs"
+                className="honey-chip inline-flex items-center space-x-1.5 bg-honey-300 hover:bg-honey-400 text-mocha-800 px-3.5 py-1.5 rounded-lg font-medium transition-colors text-xs"
               >
                 <span>☕</span>
                 <span>Support me on Ko-fi</span>

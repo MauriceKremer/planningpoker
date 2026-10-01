@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useSocket, startHeartbeat, stopHeartbeat } from '../utils/socket';
 import { removeUserSession } from '../utils/sessionStorage';
+import { getAvatarPreferences } from '../utils/avatarPreferences';
 import { applyEvent } from '../utils/sessionDelta';
 import { validateEvent, type EventName, type EventPayload } from '../protocol/events';
 import type {
@@ -115,7 +116,11 @@ const useSessionSocket = ({
     socket.auth = { sessionId, userId };
 
     const join = () => {
-      socket.emit('join-session', { sessionId, userId });
+      // A returning user re-seeds their locally saved avatar on every
+      // (re)connect — the server keeps the session copy in sync, so the room
+      // always sees the freshest preference.
+      const avatar = getAvatarPreferences();
+      socket.emit('join-session', { sessionId, userId, ...(avatar ? { avatar } : {}) });
     };
 
     const handleConnectError = (err: Error) => {
@@ -222,6 +227,15 @@ const useSessionSocket = ({
         patchValidated('user-name-updated', p);
         if (p.userId === currentUserRef.current?.id) {
           onCurrentUserUpdateRef.current((user) => (user ? { ...user, name: p.newName } : user));
+        }
+      }],
+
+      ['user-avatar-updated', (data) => {
+        const p = validateEvent('user-avatar-updated', data);
+        if (!p) return;
+        patchValidated('user-avatar-updated', p);
+        if (p.userId === currentUserRef.current?.id) {
+          onCurrentUserUpdateRef.current((user) => (user ? { ...user, avatar: p.user.avatar } : user));
         }
       }],
 

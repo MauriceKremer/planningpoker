@@ -29,6 +29,34 @@ const { z } = require('zod');
 const cardSetItem = z.string();
 
 /**
+ * Curated avatar palette keys — mirrored verbatim from the client contract.
+ * Every entry keeps white text/emoji inside the circle at ≥ 4.5:1.
+ */
+const AVATAR_COLORS = [
+  'rose', 'coral', 'amber', 'moss', 'teal', 'sky', 'indigo', 'violet', 'berry', 'slate',
+];
+
+const avatarColorSchema = z.enum(AVATAR_COLORS);
+
+/** A participant avatar: a curated color plus an optional emoji glyph. */
+const avatarSchema = z.object({
+  color: avatarColorSchema,
+  glyph: z.string().regex(/^[^<>]{1,16}$/u).optional(),
+});
+
+/**
+ * Validate an avatar received from a client. Throws with a user-facing
+ * message on any deviation — an unvalidated avatar must never be stored or
+ * rebroadcast (colors must stay in the WCAG-safe palette; glyphs must carry
+ * no markup).
+ */
+const sanitizeAvatar = (value) => {
+  const result = avatarSchema.safeParse(value);
+  if (!result.success) throw new Error('Invalid avatar');
+  return result.data;
+};
+
+/**
  * A participant, as carried in any delta. Optional bookkeeping fields may be
  * omitted by producers that don't touch them; a partial user object still
  * validates.
@@ -42,6 +70,7 @@ const userSchema = z.object({
   lastSeen: z.string().optional(),
   connectedAt: z.string().optional(),
   countdownSeconds: z.number().optional(),
+  avatar: avatarSchema.optional(),
 });
 
 /** `{ [userId]: cardValue }` — a map of who has selected which card. */
@@ -147,6 +176,11 @@ const userNameUpdatedSchema = z.object({
   moderatorName: z.string().optional(),
 });
 
+const userAvatarUpdatedSchema = z.object({
+  userId: z.string(),
+  user: userSchema,
+});
+
 const moderatorChangedSchema = z.object({
   newModeratorId: z.string(),
   newModeratorName: z.string().nullable().optional(),
@@ -214,6 +248,7 @@ const eventSchemas = {
   'user-disconnected': userDisconnectedSchema,
   'user-countdown': userCountdownSchema,
   'user-name-updated': userNameUpdatedSchema,
+  'user-avatar-updated': userAvatarUpdatedSchema,
   'moderator-changed': moderatorChangedSchema,
   'participant-removed': participantRemovedSchema,
   'participant-auto-removed': participantRemovedSchema,
@@ -252,7 +287,9 @@ const assertOutgoing = (event, data) => {
 module.exports = {
   eventSchemas,
   assertOutgoing,
+  sanitizeAvatar,
   // Exported for tests that want to introspect individual schemas.
+  avatarSchema,
   userSchema,
   votesMap,
 };

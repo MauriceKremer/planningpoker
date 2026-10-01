@@ -9,8 +9,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8081
-      # Overridable for local testing: CLIENT_URL=http://localhost:4080 docker compose -f docker-compose.prod.yml up -d
-      - CLIENT_URL=${CLIENT_URL:-https://planningpoker.bytecoder.nl}
+      # Overridable for local testing: CLIENT_URL=... docker compose
+      # -f docker-compose.prod.yml up -d. Comma-separated whitelist — the
+      # canonical domain plus the local verify port both serve this backend.
+      - CLIENT_URL=${CLIENT_URL:-https://planningpoker.bytecoder.nl,http://localhost:4080}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/api/health"]
       interval: 30s
@@ -29,9 +31,6 @@ services:
       # container, no dockerdata/client-build bind mount.
       additional_contexts:
         client: ./client
-      args:
-        - VITE_API_URL=https://planningpoker.bytecoder.nl/api
-        - VITE_SOCKET_URL=https://planningpoker.bytecoder.nl
     image: planningpoker-nginx:current
     container_name: planningpoker-nginx
     restart: unless-stopped

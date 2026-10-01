@@ -22,6 +22,7 @@ const crypto = require('crypto');
 // Vote-out policy lives in socket/voteOut.js (pure); re-exported here so the
 // existing import surface is unchanged.
 const { publicVoteOutView, computeVoteOutRequired } = require('../socket/voteOut');
+const { sanitizeAvatar } = require('../protocol/eventSchemas');
 
 const DEFAULT_CARD_SET = ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89'];
 
@@ -60,7 +61,7 @@ const store = new Map();
 
 // ── Create ──────────────────────────────────────────────────────────────────
 
-const createSession = (moderatorName, title = null, cardSet = null) => {
+const createSession = (moderatorName, title = null, cardSet = null, avatar = null) => {
   let sessionId;
   let attempts = 0;
   const maxAttempts = 10;
@@ -84,6 +85,7 @@ const createSession = (moderatorName, title = null, cardSet = null) => {
       [moderatorId]: {
         id: moderatorId, name: moderatorName, isModerator: true,
         joinedAt: now, lastSeen: now, isOnline: true,
+        ...(avatar ? { avatar: sanitizeAvatar(avatar) } : {}),
       },
     },
     votes: {},
@@ -145,7 +147,7 @@ const getAllSessions = () => Array.from(store.entries());
 
 // ── Join ────────────────────────────────────────────────────────────────────
 
-const joinSession = (sessionId, userName) => {
+const joinSession = (sessionId, userName, avatar = null) => {
   let createdUser = null;
   const session = updateSessionAtomic(sessionId, (session) => {
     const isDuplicateName = Object.values(session.users).some(
@@ -160,6 +162,7 @@ const joinSession = (sessionId, userName) => {
       // `protocol/events.ts` `userSchema` requires it); participants join as
       // non-moderators and only a transfer flips the flag.
       id: userId, name: userName, isModerator: false, isOnline: false, lastSeen: now, joinedAt: now,
+      ...(avatar ? { avatar: sanitizeAvatar(avatar) } : {}),
     };
     session.users[userId] = createdUser;
   });

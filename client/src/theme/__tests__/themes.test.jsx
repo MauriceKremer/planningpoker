@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { resolveTheme, useActiveTheme, themes as realThemes } from '../themes';
 
 const TestComponent = () => {
@@ -7,6 +8,17 @@ const TestComponent = () => {
     <div data-testid="theme">
       <span data-testid="theme-id">{theme?.id}</span>
       <span data-testid="backdrop">{backdropStyle.backgroundImage}</span>
+    </div>
+  );
+};
+
+const ModeComponent = () => {
+  const { theme, mode, setMode } = useActiveTheme();
+  return (
+    <div data-testid="theme">
+      <span data-testid="theme-id">{theme?.id}</span>
+      <span data-testid="mode">{mode}</span>
+      <button type="button" onClick={() => setMode('clean')}>to-clean</button>
     </div>
   );
 };
@@ -102,6 +114,7 @@ describe('useActiveTheme', () => {
   const originalLocation = window.location;
 
   afterEach(() => {
+    localStorage.clear();
     Object.defineProperty(window, 'location', {
       value: originalLocation,
       writable: true,
@@ -143,5 +156,56 @@ describe('useActiveTheme', () => {
     render(<TestComponent />);
     const expected = resolveTheme(realThemes, new Date()).id;
     expect(screen.getByTestId('theme-id').textContent).toBe(expected);
+  });
+
+  it('uses the stored Clean Mode preference over the seasonal theme', () => {
+    localStorage.setItem('planningpoker_theme', 'clean');
+
+    render(<TestComponent />);
+    expect(screen.getByTestId('theme-id').textContent).toBe('clean');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('clean');
+    // Clean Mode ships no illustration.
+    expect(screen.getByTestId('backdrop').textContent).toBe('');
+  });
+
+  it('supports the clean-dark mode with persistence', () => {
+    localStorage.setItem('planningpoker_theme', 'clean-dark');
+
+    render(<TestComponent />);
+    expect(screen.getByTestId('theme-id').textContent).toBe('clean-dark');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('clean-dark');
+  });
+
+  it('ignores an invalid stored mode', () => {
+    localStorage.setItem('planningpoker_theme', 'neon-purple');
+
+    render(<TestComponent />);
+    const expected = resolveTheme(realThemes, new Date()).id;
+    expect(screen.getByTestId('theme-id').textContent).toBe(expected);
+  });
+
+  it('lets a dev-mode ?theme= override beat the stored mode', () => {
+    localStorage.setItem('planningpoker_theme', 'clean');
+    const url = new URL(window.location.href);
+    url.searchParams.set('theme', 'christmas');
+    Object.defineProperty(window, 'location', {
+      value: { search: url.search },
+      writable: true,
+    });
+
+    render(<TestComponent />);
+    expect(screen.getByTestId('theme-id').textContent).toBe('christmas');
+  });
+
+  it('switching modes updates the theme, document attribute and storage', async () => {
+    const user = userEvent.setup();
+
+    render(<ModeComponent />);
+    await user.click(screen.getByRole('button', { name: 'to-clean' }));
+
+    expect(screen.getByTestId('theme-id').textContent).toBe('clean');
+    expect(screen.getByTestId('mode').textContent).toBe('clean');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('clean');
+    expect(localStorage.getItem('planningpoker_theme')).toBe('clean');
   });
 });

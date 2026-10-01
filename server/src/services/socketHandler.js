@@ -7,7 +7,7 @@ const { transferModeratorRole } = require('../socket/moderator');
 const payloads = require('../socket/eventPayloads');
 const { applyCleanup } = require('../socket/cleanupPolicy');
 const { createVoteOut, castVoteOutVote, pruneVoteOutForRemovedUser, VOTE_OUT_THRESHOLD_PERCENT, VOTE_OUT_TIMEOUT_MS } = require('../socket/voteOut');
-const { assertOutgoing } = require('../protocol/eventSchemas');
+const { assertOutgoing, sanitizeAvatar } = require('../protocol/eventSchemas');
 
 const SPECIAL_VOTES = ['☕', '❓'];
 const RATE_LIMITED_MESSAGE = 'Too many requests. Please slow down.';
@@ -160,6 +160,10 @@ const setupSocketEvents = (io, options = {}) => {
       userId: VALIDATION_RULES.userId,
     }, async (data) => {
       const { sessionId, userId } = data;
+      // A returning user seeds their saved avatar so the room sees it; an
+      // absent field leaves the stored avatar alone. Invalid avatars are
+      // rejected before any mutation or room-join happens.
+      const savedAvatar = data.avatar ? sanitizeAvatar(data.avatar) : null;
       // Returning user — cancel any scheduled hand-over from a previous
       // disconnect before the conflict handling below.
       cancelPendingModeratorTransfer(sessionId, userId);
@@ -174,6 +178,7 @@ const setupSocketEvents = (io, options = {}) => {
       const session = updateSessionAtomic(sessionId, (session) => {
         const user = getUser(session, userId);
         if (!user) throw new Error('User not found in session');
+        if (savedAvatar) user.avatar = savedAvatar;
         user.lastSeen = new Date().toISOString();
         user.isOnline = true;
       });
@@ -362,6 +367,23 @@ const setupSocketEvents = (io, options = {}) => {
         if (session.moderatorId === renamingUserId) session.moderator = trimmedName;
       });
       io.to(sessionId).emit('user-name-updated', payloads.userNameUpdated(session, renamingUserId, oldName, trimmedName));
+    });
+
+    on('update-user-avatar', {
+      sessionId: VALIDATION_RULES.sessionId,
+      userId: VALIDATION_RULES.userId,
+    }, async (data) => {
+      assertIdentity(data);
+      const { sessionId, userId } = data;
+      // sanitizeAvatar validates BEFORE mutating — a rejected avatar leaves
+      // the user record untouched and surfaces as an `error` event.
+      const avatar = sanitizeAvatar(data.avatar);
+      const session = updateSessionAtomic(sessionId, (session) => {
+        const user = getUser(session, userId);
+        if (!user) throw new Error('User not found in session');
+        user.avatar = avatar;
+      });
+      io.to(sessionId).emit('user-avatar-updated', payloads.userAvatarUpdated(session, userId));
     });
 
     on('remove-participant', {
